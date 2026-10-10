@@ -28,11 +28,12 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 
 | Script | Flag | What it does |
 |---|---|---|
-| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Install kitty auto dark/light theme files (when a kitty config dir exists). Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Ask to install the kitty auto dark/light theme files (when a kitty config dir exists and stdin is a TTY). Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
 | `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
 | `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
-| `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme) for scripted installs / CI |
+| `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme, kitty theme) for scripted installs / CI |
 | `install.sh` | `--librewolf` | Apply the LibreWolf color-scheme fix (below) without asking |
+| `install.sh` | `--kitty` | Install the kitty auto dark/light theme files (below) without asking |
 | `themes/gtk-cosmic-theme.sh` | _(none)_ | Build both `~/.local/share/themes/Cosmic-Purple` and `-Dark` |
 | `themes/gtk-cosmic-theme.sh` | `--dark-only` | Only rebuild the dark variant |
 | `themes/gtk-cosmic-theme.sh` | `--light-only` | Only rebuild the light variant |
@@ -47,7 +48,8 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 | `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark` **and** swaps the wallpaper light↔dark. Bound to Alt+Shift+P by default. |
 | `themes/librewolf-color-scheme.sh` | _(none)_ | Write the three color-scheme prefs into every LibreWolf profile's `user.js` (backup first). Idempotent. |
 | `themes/librewolf-color-scheme.sh` | `--help` (`-h`) | Print usage |
-| `themes/install-kitty-theme.sh` | _(none)_ | Install the three kitty auto-theme files (`themes/kitty/*.auto.conf`) into `~/.config/kitty` so kitty follows the system dark/light theme (kitty >= 0.38). Idempotent; prints a message and exits 0 if the kitty config dir is missing. |
+| `themes/install-kitty-theme.sh` | _(none)_ | Ask for confirmation (when run from a terminal), then install the three kitty auto-theme files (`themes/kitty/*.auto.conf`) into `~/.config/kitty` so kitty follows the system dark/light theme (kitty >= 0.38). Idempotent; prints a message and exits 0 if the kitty config dir is missing. Non-TTY (scripted) runs skip the prompt. |
+| `themes/install-kitty-theme.sh` | `--yes` (`-y`) | Install the three kitty auto-theme files without asking |
 | `themes/install-kitty-theme.sh` | `--help` (`-h`) | Print usage |
 
 Everything uses `$HOME` (no hardcoded `/home/yourname`) and runs as a normal user — no `sudo` needed.
@@ -148,10 +150,15 @@ kitty detects the OS color scheme through the XDG portal and switches
 toggle this repo wires up) and COSMIC Settings → Appearance set that
 preference, so kitty follows along either way.
 
-`themes/install-kitty-theme.sh` installs the three files from
-`themes/kitty/` into `~/.config/kitty/`; `install.sh` also runs it
-automatically whenever a kitty config dir exists (no prompt, non-fatal).
-Re-running overwrites the same content — idempotent.
+Installing these files is **opt-in / confirmation-gated**: run from a
+terminal, `install.sh` asks `Install the Cosmic Purple kitty theme (auto
+dark/light)? [y/N]` whenever a kitty config dir exists and stdin is a TTY
+— pass `--kitty` to install without asking, or `--no-prompt` to skip the
+question entirely. Run directly, `themes/install-kitty-theme.sh` lists
+the three files it will write and asks for confirmation too (unless you
+pass `--yes`/`-y`, or stdin isn't a TTY, in which case it installs
+straight away). Either way a failure is non-fatal. Re-running overwrites
+the same content — idempotent.
 
 Kitty **< 0.38** ignores these files (they were added in 0.38), so on
 older installs the script is a harmless no-op.
@@ -239,13 +246,13 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | Path | Purpose |
 |---|---|
 | `README.md`                       | this file |
-| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply + interactive wallpaper prompt) |
+| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply + interactive prompts for per-theme wallpapers, the LibreWolf color-scheme fix and the kitty auto-theme install) |
 | `themes/gtk-cosmic-theme.sh`      | builds GTK themes (`Cosmic-Purple` / `Cosmic-Purple-Dark`) for LibreWolf etc. |
 | `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
 | `themes/install-shortcut.sh`      | installs the toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Portable across users. |
 | `themes/set-wallpaper.sh`         | change the light/dark wallpapers Alt+Shift+P swaps (`--light`/`--dark`/`--both` or interactive menu) |
 | `themes/librewolf-color-scheme.sh` | makes LibreWolf websites follow the system dark/light theme (disables RFP, enables FPP with a `CSSPrefersColorScheme` exemption). Idempotent `user.js` writer, backups first. |
-| `themes/install-kitty-theme.sh` | installs the kitty auto dark/light theme files (`themes/kitty/`) into `~/.config/kitty` so kitty follows the system dark/light theme natively (kitty >= 0.38). Idempotent; skips with exit 0 if no kitty config dir. |
+| `themes/install-kitty-theme.sh` | installs the kitty auto dark/light theme files (`themes/kitty/`) into `~/.config/kitty` so kitty follows the system dark/light theme natively (kitty >= 0.38). Asks for confirmation when run from a terminal (`--yes`/`-y` skips; non-TTY runs install directly). Idempotent; skips with exit 0 if no kitty config dir. |
 | `themes/cosmic-purple-toggle.sh`  | the actual flipper — swaps theme + wallpaper, bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 
@@ -258,7 +265,7 @@ install:
 git clone <this-repo>
 cd pop_os_purple_theme
 sh install.sh --apply-dark    # or --apply-light
-sh install.sh --apply-dark --no-prompt   # scripted: skip the wallpaper prompt
+sh install.sh --apply-dark --no-prompt   # scripted: skip the interactive prompts
 ```
 
 No privileged operations; no dependencies beyond `bash`, `sed`,

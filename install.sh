@@ -10,8 +10,9 @@
 #     sh install.sh --apply-light    # build both, apply Cosmic-Purple
 #     sh install.sh --dark-only      # build only Cosmic-Purple-Dark
 #     sh install.sh --light-only     # build only Cosmic-Purple
-#     sh install.sh --no-prompt      # skip the interactive prompts (wallpapers, LibreWolf)
+#     sh install.sh --no-prompt      # skip the interactive prompts (wallpapers, LibreWolf, kitty)
 #     sh install.sh --librewolf      # apply the LibreWolf color-scheme fix without asking
+#     sh install.sh --kitty          # install the kitty auto dark/light theme without asking
 #
 # Alt+Shift+P is wired to toggle the theme (and the wallpaper, if you opt
 # in). After building you're optionally asked whether to set per-theme
@@ -23,10 +24,11 @@
 # by default — see themes/librewolf-color-scheme.sh). Pass --librewolf
 # to apply it without asking; --no-prompt skips the question entirely.
 #
-# If the kitty config dir exists, its auto dark/light theme files are
-# installed too (themes/install-kitty-theme.sh) so the kitty terminal
-# follows the system dark/light mode natively (kitty >= 0.38). No prompt,
-# never fatal.
+# If the kitty config dir exists you'll also be asked whether to install
+# its auto dark/light theme files (themes/install-kitty-theme.sh) so kitty
+# follows the system dark/light mode natively (kitty >= 0.38). Pass
+# --kitty to install them without asking; --no-prompt skips the question.
+# Never fatal.
 #
 # No sudo needed. Run from anywhere.
 
@@ -44,6 +46,7 @@ BUILD_ARGS=
 APPLY_THEME=
 NO_PROMPT=
 LIBREWOLF=
+KITTY=
 for a in "$@"; do
     case "$a" in
         --dark-only)   BUILD_ARGS="--dark-only"  ;;
@@ -52,8 +55,9 @@ for a in "$@"; do
         --apply-light) APPLY_THEME=Cosmic-Purple ;;
         --no-prompt)   NO_PROMPT=1 ;;
         --librewolf)   LIBREWOLF=1 ;;
+        --kitty)       KITTY=1 ;;
         --help|-h)
-            sed -n '2,31p' "$0"
+            sed -n '2,32p' "$0"
             exit 0 ;;
         *) die "unknown arg: $a" ;;
     esac
@@ -104,18 +108,34 @@ if [ -f "$LW_SH" ]; then
     fi
 fi
 
-# --- optional kitty auto dark/light theme files (non-interactive) ------------
-# If kitty's config dir exists, install the dark/light/no-preference
-# auto-theme files (themes/kitty/) so kitty follows the system dark/light
-# theme natively (kitty >= 0.38). Low-impact color files: no prompt, and
-# a failure only warns and continues. The script itself also exits 0
+# --- optional kitty auto dark/light theme files (interactive) ----------------
+# kitty (>= 0.38) follows the system dark/light theme via three auto-theme
+# files in its config dir (themes/install-kitty-theme.sh). Because this
+# writes into the user's kitty config, install.sh asks before doing so —
+# only when the kitty config dir exists and stdin is a TTY. --kitty forces
+# the install without asking (running the script with --yes so it doesn't
+# re-prompt); --no-prompt (or a non-TTY stdin) skips the question entirely.
+# A failure only warns and continues. The script itself also exits 0
 # gracefully when the config dir is missing, so the check here is just a
 # cheap guard to skip it entirely.
 KITTY_SH="$BUNDLE/themes/install-kitty-theme.sh"
+KITTY_WANT=
 if [ -f "$KITTY_SH" ] && [ -d "$HOME/.config/kitty" ]; then
-    say "==> Installing kitty auto dark/light theme files ..."
-    sh "$KITTY_SH" || say "  (kitty theme install failed - continuing anyway)"
-    say ""
+    if [ -n "$KITTY" ]; then
+        KITTY_WANT=1
+    elif [ -z "$NO_PROMPT" ] && [ -t 0 ]; then
+        printf 'Install the Cosmic Purple kitty theme (auto dark/light)? [y/N] '
+        _ans=
+        read -r _ans || true
+        case "$_ans" in
+            y|Y|yes|YES|Yes) KITTY_WANT=1 ;;
+        esac
+    fi
+    if [ -n "$KITTY_WANT" ]; then
+        say "==> Installing kitty auto dark/light theme files ..."
+        sh "$KITTY_SH" --yes || say "  (kitty theme install failed - continuing anyway)"
+        say ""
+    fi
 fi
 
 # --- optional per-theme wallpapers (interactive) ----------------------------
