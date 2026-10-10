@@ -209,6 +209,16 @@ say "  accent palette overrides applied"
 # overrides like accent_blue since the recolor mapping covers #00525A.)
 say "  accent pass complete"
 
+# -- Active window hint (focus border color) -------------------------------
+# Drive the focused-window border to your primary purple. bright enough
+# to see on both light cream and dark purple-bg. Some(...) wrapper is
+# the RON format for Option<Color> in cosmic-settings-config.
+for V in "$SRC_DARK" "$SRC_LIGHT"; do
+    [ -f "$V/active_hint" ] || continue
+    printf 'Some("#cf6febFF")\n' > "$V/active_hint"
+done
+say "  active_hint = Some(\"#cf6febFF\") (bright purple focus border)"
+
 say ""
 say "Done. Log out + log in to see the change everywhere."
 say "  - Top bar, dock, cosmic-edit / cosmic-files / cosmic-term: surface tiers copy Rosé Pine Dawn"
