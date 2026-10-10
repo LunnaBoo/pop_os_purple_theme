@@ -255,6 +255,25 @@ done
 say "  active_hint = Some(\"#cf6febFF\"), window_hint = 1 (focus border on, bright purple)"
 
 say ""
+say "==> Forcing Square corner radii (all 0)..."
+# Some libcosmic widget rendering has a styling issue with rounded corners
+# that causes text/buttons to render invisibly under specific color combinations.
+# Setting all radii to 0 (Square) sidesteps it.
+SQUARE_RADII=$'((\n'
+SQUARE_RADII+='    radius_0: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+='    radius_xs: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+='    radius_s: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+='    radius_m: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+='    radius_l: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+='    radius_xl: (0.0, 0.0, 0.0, 0.0),\n'
+SQUARE_RADII+=')\n'
+for V in "$SRC_DARK" "$SRC_LIGHT"; do
+    [ -f "$V/corner_radii" ] || continue
+    printf '%s' "$SQUARE_RADII" > "$V/corner_radii"
+done
+say "  corner_radii set to Square (all 0) on both variants"
+
+say ""
 say "Done. Log out + log in to see the change everywhere."
 say "  - Top bar, dock, cosmic-edit / cosmic-files / cosmic-term: surface tiers copy Rosé Pine Dawn"
 say "  - Accent buttons / focus:        #3a1450 (deep purple, primary)"
