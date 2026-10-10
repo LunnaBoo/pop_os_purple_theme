@@ -259,14 +259,15 @@ say "==> Forcing Square corner radii (all 0)..."
 # Some libcosmic widget rendering has a styling issue with rounded corners
 # that causes text/buttons to render invisibly under specific color combinations.
 # Setting all radii to 0 (Square) sidesteps it.
-SQUARE_RADII=$'((\n'
-SQUARE_RADII+='    radius_0: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+='    radius_xs: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+='    radius_s: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+='    radius_m: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+='    radius_l: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+='    radius_xl: (0.0, 0.0, 0.0, 0.0),\n'
-SQUARE_RADII+=')\n'
+SQUARE_RADII='(
+    radius_0: (0.0, 0.0, 0.0, 0.0),
+    radius_xs: (0.0, 0.0, 0.0, 0.0),
+    radius_s: (0.0, 0.0, 0.0, 0.0),
+    radius_m: (0.0, 0.0, 0.0, 0.0),
+    radius_l: (0.0, 0.0, 0.0, 0.0),
+    radius_xl: (0.0, 0.0, 0.0, 0.0),
+)
+'
 for V in "$SRC_DARK" "$SRC_LIGHT"; do
     [ -f "$V/corner_radii" ] || continue
     printf '%s' "$SQUARE_RADII" > "$V/corner_radii"
