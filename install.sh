@@ -46,6 +46,16 @@ else
 fi
 say ""
 
+# --- recolor COSMIC native (libcosmic) theme in place ----------------------
+# This handles the top bar, dock, cosmic-edit, cosmic-files, cosmic-term,
+# settings panels — everything libcosmic. Optional, only on COSMIC sessions.
+NATIVE_SH="$BUNDLE/themes/cosmic-native-recolor.sh"
+if [ -f "$NATIVE_SH" ] && [ -d ~/.config/cosmic ]; then
+    say "==> Recoloring COSMIC native theme ..."
+    sh "$NATIVE_SH" || say "  (native recolor failed - GTK-only theme will still apply)"
+    say ""
+fi
+
 # --- optionally apply via gsettings ----------------------------------------
 if [ -n "$APPLY_THEME" ] && command -v gsettings >/dev/null 2>&1; then
     SCHEME=prefer-dark

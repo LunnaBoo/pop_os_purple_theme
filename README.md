@@ -50,20 +50,24 @@ own; set it alongside `gtk-theme`. After switching, **log out and back in**
 
 ## How it works
 
-Pop!_OS 24.04 ships stock GTK themes at:
+Pop!_OS 24.04 has **two separate theming systems** that BOTH need to be
+recolored for the whole desktop to look Cosmic Purple:
 
-| Path | Purpose |
-|---|---|
-| `/usr/share/themes/adw-gtk3`      | light base |
-| `/usr/share/themes/adw-gtk3-dark` | dark  base |
+1. **GTK apps** (LibreWolf, future-installed GTK tools). Themed by
+   `gtk-cosmic-theme.sh`, which builds `Cosmic-Purple` and
+   `Cosmic-Purple-Dark` from the stock `adw-gtk3` bases.
+2. **COSMIC native apps + desktop chrome** (top bar, dock, cosmic-edit,
+   cosmic-files, cosmic-term, cosmic-player, all settings panels). Themed
+   by `cosmic-native-recolor.sh`, which sed-recolors the user's existing
+   libcosmic theme config in place.
 
-GTK prefers a same-named theme under `~/.local/share/themes/`, so the
-script copies the bases there and `sed`-replaces a focused set of
-`@define-color` declarations in every `*.css` file. Only CSS is touched —
-binary PNG/SVG assets (toggle/check icon shapes) are left alone so widget
-imagery doesn't break.
+Without (2), your GTK theme will apply to LibreWolf but the rest of the
+desktop stays stock dark. Without (1), GTK apps stay stock but COSMIC
+native UI is purple. The install script runs both.
 
 ### What gets recolored
+
+**GTK** (`gtk-cosmic-theme.sh`):
 
 - `blue_1`..`blue_5` palette → cosmic purple gradient (`#dfb8ed` … `#6b2b8a`)
 - `accent_bg_color` / `accent_color` → `#ab6fd0` / `#cf6feb`
@@ -73,15 +77,25 @@ imagery doesn't break.
   cosmic tones
 - Information cyan (`#0f9ac8`, `#7ad9f1`) → purple (`#7a59ca`, `#9e91e8`)
   so the whole UI stays in the purple family
+- Status colors (green/yellow/orange/red) preserved for clear error/warning/success UX
+
+**COSMIC native** (`cosmic-native-recolor.sh`):
+
+- The libcosmic palette grays (`#1B1B1B`, `#262626`, ...) → cosmic dark purples
+- `primary`, `secondary`, `background` chains → cosmic chrome / popup variants
+- Text tints `#C2CFE2`, `#B5C1D4`, `#CEDBEF` → cosmic foreground `#d9c7ec`
+- Accent purple `#E79CFE` family → cosmic bright `#cf6feb`
+- Accent pressed/hover variants → cosmic primary/secondary
+- Status colors preserved: warning (yellow), success (green),
+  destructive (red), error (red-orange)
 
 What **doesn't** get recolored:
 
-- `.storage-bar .btrfs`, `.ext3`, etc. — those are filesystem-specific
-  status indicators (blue for btrfs, green for ext) and stay as-is.
-- Status colors (green/yellow/orange/red palette) — kept so error states,
-  warnings, success accents still read clearly.
-- The GNOME Shell itself — Pop!_OS uses pop-shell and rarely applies a
-  classic gnome-shell theme. Open an issue if you want that wired up.
+- File-system status indicators (BTRFS blue, ext green) — informational
+- Status semantics (yellow warning, green success, red destructive)
+- The COSMIC compositor's window-decoration strategy (a separate, much
+  bigger problem — see the discussion about Sway in the user's session
+  notes; this repo only colors, it doesn't strip window headers)
 
 ### Old Pop!_OS releases
 
@@ -117,8 +131,9 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | Path | Purpose |
 |---|---|
 | `README.md`                       | this file |
-| `install.sh`                      | one-shot installer (builds + optional gsettings apply) |
-| `themes/gtk-cosmic-theme.sh`      | the actual recoloring logic |
+| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply) |
+| `themes/gtk-cosmic-theme.sh`      | builds GTK themes (`Cosmic-Purple` / `Cosmic-Purple-Dark`) for LibreWolf etc. |
+| `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
 | `palette.md`                      | color reference |
 
 ## Reproducing across machines
