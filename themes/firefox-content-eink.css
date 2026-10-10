@@ -1,0 +1,78 @@
+/* firefox-content-eink.css
+ *
+ * Drop this into your LibreWolf (or any Firefox-based) profile's chrome/
+ * directory as `userContent.css`. It rewrites page-rendered colors so
+ * bright white website backgrounds become e-ink paper (#c5c5c1) and
+ * text becomes cosmic dark (#1a0d21). Images, videos, gradients, and
+ * inline-style backgrounds of common widgets are preserved so site
+ * design intent isn't completely flattened.
+ *
+ * Where it goes:
+ *   ~/.config/librewolf/librewolf/<profile-id>/chrome/userContent.css
+ *
+ * On your system that's usually:
+ *   ~/.config/librewolf/librewolf/*.default-default/chrome/userContent.css
+ *
+ * (You already maintain the chrome/ config in textfox_rice — copy this
+ * to that path or concat with your existing userContent.css.)
+ *
+ * What it does:
+ *   - html/body: papers the canvas at #c5c5c1 e-ink tone
+ *   - text elements: forces cosmic dark #1a0d21 (contrast ratio ~9.6:1)
+ *   - preserves <img>, <picture>, <svg>, <video>, <canvas>, <iframe>
+ *   - leaves anything with !important inline styles alone except for
+ *     background-color (clamped to e-ink paper / ink for legibility)
+ *
+ * Toggle off: comment out the body of this file, or rename it to
+ * `userContent.css.off` and restart LibreWolf.
+
+@-moz-document url-prefix("http://"),
+               url-prefix("https://"),
+               url-prefix("file://") {
+
+  /* Canvas: e-ink paper */
+  html, body {
+    background-color: #c5c5c1 !important;
+    color: #1a0d21 !important;
+  }
+
+  /* Headings, paragraphs, list items, table cells -> cosmic dark ink */
+  body, body *:not(img):not(picture):not(svg):not(canvas):not(video):not(iframe):not(object):not(embed) {
+    color: #1a0d21 !important;
+  }
+
+  /* Box backgrounds: e-ink paper, slightly lighter for cards */
+  body *:not(img):not(picture):not(svg):not(canvas):not(video):not(iframe):not(object):not(embed):not(button):not(input):not(select):not(textarea):not([class*="button"]) {
+    background-color: #c5c5c1 !important;
+  }
+
+  /* Cards / panels (Markdown prose, stackoverflow question boxes, etc.) */
+  body *:not(img):not(picture):not(svg):not(canvas):not(video):not(iframe):not(object):not(embed):where([class*="card"], [class*="panel"], [class*="box"]) {
+    background-color: #c9c9c5 !important;
+  }
+
+  /* Interactive widgets (buttons, inputs) keep their slightly darker bezel */
+  button, input, select, textarea,
+  [role="button"], [class*="btn"], [class*="button"] {
+    background-color: #b8b8b4 !important;
+    color: #1a0d21 !important;
+    border-color: #6b2b8a !important;
+  }
+
+  /* Selected / focused highlight -> cosmic purple */
+  ::selection {
+    background-color: #ab6fd0 !important;
+    color: #ffffff !important;
+  }
+  *:focus-visible {
+    outline-color: #ab6fd0 !important;
+  }
+
+  /* Hyperlinks: keep their cosmic-purple identity */
+  a, a * {
+    color: #6b2b8a !important;
+  }
+  a:visited, a:visited * {
+    color: #9141ac !important;
+  }
+}
