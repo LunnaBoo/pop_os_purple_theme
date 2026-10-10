@@ -38,11 +38,21 @@ die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 # -- backup -------------------------------------------------------------------
 SRC_DARK=~/.config/cosmic/com.system76.CosmicTheme.Dark/v2
 SRC_LIGHT=~/.config/cosmic/com.system76.CosmicTheme.Light/v2
+BLD_DARK=~/.config/cosmic/com.system76.CosmicTheme.Dark.Builder/v2
+BLD_LIGHT=~/.config/cosmic/com.system76.CosmicTheme.Light.Builder/v2
 TS=$(date +%Y%m%d-%H%M%S)
 
 BAK_DARK=$SRC_DARK.bak-cosmic-purple.$TS
 cp -a "$SRC_DARK" "$BAK_DARK"
 say "backup: $BAK_DARK"
+
+# Remove stray backup/temp files left INSIDE the derived dirs (e.g. an
+# earlier manual `primary.bak-test`). The sibling *.bak-cosmic-purple.*
+# backup dirs are NOT touched.
+for V in "$SRC_DARK" "$SRC_LIGHT"; do
+    [ -d "$V" ] || continue
+    find "$V" -maxdepth 1 -type f \( -name '*.bak*' -o -name '*~' \) -delete
+done
 
 # -- mappings for both variants ------------------------------------------------
 # Each recolor_X maps the STOCK .ron hex values from /usr/share/cosmic
@@ -229,30 +239,38 @@ say ""
 say "==> Forcing accent palette overrides (primary #3a1450, secondary #ea9d34)..."
 apply_palette_accent() {
     find "$1" -type f -exec sed -i -E \
-      -e 's|(accent_purple: ")(#[0-9a-fA-F]{6,8}")|\1#cf6feb"|g' \
-      -e 's|(accent_blue: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
-      -e 's|(accent_yellow: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
+      -e 's|(accent_purple: ")(#[0-9a-fA-F]{6,8}")|\1#cf6febFF"|g' \
+      -e 's|(accent_blue: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34FF"|g' \
+      -e 's|(accent_yellow: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34FF"|g' \
       {} \;
 }
 apply_palette_accent "$SRC_DARK"
 [ -d "$SRC_LIGHT" ] && apply_palette_accent "$SRC_LIGHT"
+# Persist the same accent overrides into the Builder palette config so
+# cosmic-settings regenerates the derived theme from the overridden accents
+# instead of reverting to stock on the next Appearance change. The same sed
+# matches the accents inside the Builder's Dark((...))/Light((...)) wrapper.
+[ -f "$BLD_DARK/palette" ] && apply_palette_accent "$BLD_DARK"
+[ -f "$BLD_LIGHT/palette" ] && apply_palette_accent "$BLD_LIGHT"
 say "  accent palette overrides applied"
 # (Intentionally NOT re-running the recolor here - it would undo palette
 # overrides like accent_blue since the recolor mapping covers #00525A.)
 say "  accent pass complete"
 
-# -- Active window hint (focus border color) -------------------------------
-# Drive the focused-window border to your primary purple. Bright
-# saturated purple so it stands out on both light cream and dark dusk.
-# Some(...) wrapper is the RON format for Option<Color>; window_hint=1
-# enables the border (None disables it, the default which left users
-# unable to tell which window was focused).
+# -- Active window hint (focus border) -------------------------------------
+# The two window-hint theme keys have different types:
+#   active_hint : u32          - outline WIDTH in pixels (stock = 3)
+#   window_hint : Option<Srgb> - hint COLOR; Some("#RRGGBBAA") turns the
+#                                focused-window border on, None disables it
+#                                (stock None is why users couldn't tell which
+#                                window was focused).
+# Bright saturated purple (#cf6feb) so it stands out on both cream and dusk.
 for V in "$SRC_DARK" "$SRC_LIGHT"; do
     [ -f "$V/active_hint" ] || continue
-    printf 'Some("#cf6febFF")\n' > "$V/active_hint"
-    printf '1\n' > "$V/window_hint"
+    printf '3\n' > "$V/active_hint"
+    printf 'Some("#cf6febFF")\n' > "$V/window_hint"
 done
-say "  active_hint = Some(\"#cf6febFF\"), window_hint = 1 (focus border on, bright purple)"
+say "  active_hint = 3, window_hint = Some(\"#cf6febFF\") (purple focus hint)"
 
 say ""
 say "==> Forcing Square corner radii (all 0)..."
@@ -272,7 +290,34 @@ for V in "$SRC_DARK" "$SRC_LIGHT"; do
     [ -f "$V/corner_radii" ] || continue
     printf '%s' "$SQUARE_RADII" > "$V/corner_radii"
 done
-say "  corner_radii set to Square (all 0) on both variants"
+# Persist Square radii into the Builder configs too, so cosmic-settings
+# doesn't regenerate rounded corners from them on the next Appearance change
+# (Dark Builder always; Light Builder only if present).
+[ -f "$BLD_DARK/corner_radii" ] && printf '%s' "$SQUARE_RADII" > "$BLD_DARK/corner_radii"
+[ -f "$BLD_LIGHT/corner_radii" ] && printf '%s' "$SQUARE_RADII" > "$BLD_LIGHT/corner_radii"
+say "  corner_radii set to Square (all 0) on both variants (+ Builder)"
+
+# -- Post-pass lint: fail loudly on anything libcosmic would reject ----------
+# ColorRepr requires 8-digit #RRGGBBAA (a 6-digit #RRGGBB is rejected);
+# active_hint must be a u32 integer; window_hint must be Some("#RRGGBBAA")
+# or None. Guards skip absent dirs / files (e.g. no Light variant).
+for V in "$SRC_DARK" "$SRC_LIGHT" "$BLD_DARK" "$BLD_LIGHT"; do
+    [ -d "$V" ] || continue
+    if grep -rEn '#[0-9a-fA-F]{6}"' "$V"; then
+        die "6-digit hex color (must be 8-digit #RRGGBBAA); matches above name file:line under: $V"
+    fi
+    if [ -f "$V/active_hint" ]; then
+        if ! grep -Eq '^[0-9]+$' "$V/active_hint"; then
+            die "active_hint in $V is not a u32 integer: $(cat "$V/active_hint")"
+        fi
+    fi
+    if [ -f "$V/window_hint" ]; then
+        if ! grep -Eq '^(Some\("#[0-9a-fA-F]{8}"\)|None)$' "$V/window_hint"; then
+            die "window_hint in $V is not Some(\"#RRGGBBAA\") or None: $(cat "$V/window_hint")"
+        fi
+    fi
+done
+say "  lint OK: no 6-digit hex, active_hint = u32, window_hint = Some(...)/None"
 
 say ""
 say "Done. Log out + log in to see the change everywhere."
