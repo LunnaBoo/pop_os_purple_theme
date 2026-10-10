@@ -6,9 +6,16 @@
 #     into the shortcuts RON matches the user running it.
 #   - Re-running rewrites any prior Spawn entry that pointed at a stale
 #     $HOME (e.g. when ~/.config is synced across machines).
+#   - Also installs themes/set-wallpaper.sh to
+#     ~/.local/bin/cosmic-purple-set-wallpaper.sh (standalone wrapper for
+#     changing the light/dark wallpapers later).
+#   - Wallpapers are OPT-IN: pass --light/--dark to also set them (work is
+#     delegated to themes/set-wallpaper.sh). No defaults; without paths no
+#     wallpaper is touched. Re-run with --light/--dark to change them later.
 #
 # Run this from install.sh, or standalone after a fresh install:
 #     sh install-shortcut.sh
+#     sh install-shortcut.sh --light /path/light.jpg --dark /path/dark.jpg
 #
 # Revert: delete ~/.local/bin/cosmic-purple-toggle.sh and restore the
 #         shortcuts file from the backup left at .bak.<timestamp>.
@@ -20,9 +27,32 @@ die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
 [ -d ~/.config/cosmic ] || die "no ~/.config/cosmic - not a COSMIC session"
 
+# Optional wallpaper sources (opt-in via --light / --dark). Empty = none.
+LIGHT_SRC=
+DARK_SRC=
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --light)
+            [ "$#" -ge 2 ] || die "--light requires a PATH"
+            LIGHT_SRC=$2
+            shift 2
+            ;;
+        --dark)
+            [ "$#" -ge 2 ] || die "--dark requires a PATH"
+            DARK_SRC=$2
+            shift 2
+            ;;
+        *)
+            die "unknown argument: $1"
+            ;;
+    esac
+done
+
 BUNDLE=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 TOGGLE_SRC="$BUNDLE/themes/cosmic-purple-toggle.sh"
 RECOLOR_SH="$BUNDLE/themes/cosmic-native-recolor.sh"
+SET_WP="$BUNDLE/themes/set-wallpaper.sh"
 
 [ -f "$TOGGLE_SRC" ] || die "missing $TOGGLE_SRC"
 
@@ -32,12 +62,30 @@ if [ -f "$RECOLOR_SH" ]; then
     sh "$RECOLOR_SH" || say "  (recolor failed - GTK-only theme may still apply)"
 fi
 
-# 2) Install the toggle script.
+# 2) Install the toggle + wallpaper scripts.
 mkdir -p ~/.local/bin
 install -m 755 "$TOGGLE_SRC" ~/.local/bin/cosmic-purple-toggle.sh
 say "Installed: ~/.local/bin/cosmic-purple-toggle.sh"
+if [ -f "$SET_WP" ]; then
+    install -m 755 "$SET_WP" ~/.local/bin/cosmic-purple-set-wallpaper.sh
+    say "Installed: ~/.local/bin/cosmic-purple-set-wallpaper.sh"
+fi
 
-# 3) Add the Alt+Shift+P binding.
+# 3) Optional wallpapers (opt-in): delegate to set-wallpaper.sh.
+if [ -n "$LIGHT_SRC" ] || [ -n "$DARK_SRC" ]; then
+    if [ -f "$SET_WP" ]; then
+        set --
+        [ -n "$LIGHT_SRC" ] && set -- "$@" --light "$LIGHT_SRC"
+        [ -n "$DARK_SRC" ]  && set -- "$@" --dark  "$DARK_SRC"
+        sh "$SET_WP" "$@" || say "  (wallpaper install failed - non-fatal)"
+    else
+        say "Warning: $SET_WP not found - skipping wallpaper install (non-fatal)"
+    fi
+else
+    say "No wallpapers configured (run with --light/--dark, or use themes/set-wallpaper.sh later)."
+fi
+
+# 4) Add the Alt+Shift+P binding.
 SC=~/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom
 if [ ! -f "$SC" ]; then
     die "shortcuts file not found: $SC\nIs this Pop!_OS COSMIC 24.04?"

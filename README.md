@@ -28,16 +28,22 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 
 | Script | Flag | What it does |
 |---|---|---|
-| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Print manual apply command. |
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Optionally ask for per-theme wallpapers. Print manual apply command. |
 | `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
 | `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
+| `install.sh` | `--no-prompt` | Skip the interactive per-theme wallpaper prompt (for scripted installs / CI) |
 | `themes/gtk-cosmic-theme.sh` | _(none)_ | Build both `~/.local/share/themes/Cosmic-Purple` and `-Dark` |
 | `themes/gtk-cosmic-theme.sh` | `--dark-only` | Only rebuild the dark variant |
 | `themes/gtk-cosmic-theme.sh` | `--light-only` | Only rebuild the light variant |
 | `themes/gtk-cosmic-theme.sh` | `--help` | Print usage |
 | `themes/cosmic-native-recolor.sh` | _(none)_ | Recolors both libcosmic theme variants in `~/.config/cosmic/...CosmicTheme.{Dark,Light}/v2`. Idempotent. |
-| `themes/install-shortcut.sh` | _(none)_ | Installs toggle script + binds Alt+Shift+P. Idempotent; rewrites the binding if `$HOME` changed. |
-| `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark`. Bound to Alt+Shift+P by default. |
+| `themes/install-shortcut.sh` | _(none)_ | Installs toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Idempotent; rewrites the binding if `$HOME` changed. Wallpapers are opt-in. |
+| `themes/install-shortcut.sh` | `--light PATH` / `--dark PATH` | Also install the given light/dark wallpaper images (delegated to `set-wallpaper.sh`) |
+| `themes/set-wallpaper.sh` | _(none)_ | Interactive menu: change the light and/or dark wallpaper |
+| `themes/set-wallpaper.sh` | `--light PATH` | Set the light-theme wallpaper to `PATH` |
+| `themes/set-wallpaper.sh` | `--dark PATH` | Set the dark-theme wallpaper to `PATH` |
+| `themes/set-wallpaper.sh` | `--both LIGHT DARK` | Set both wallpapers at once |
+| `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark` **and** swaps the wallpaper light↔dark. Bound to Alt+Shift+P by default. |
 
 Everything uses `$HOME` (no hardcoded `/home/yourname`) and runs as a normal user — no `sudo` needed.
 
@@ -56,6 +62,37 @@ gsettings set org.gnome.desktop.interface gtk-theme  'Cosmic-Purple'    # light 
 `color-scheme` is what libadwaita apps consult to pick dark/light on their
 own; set it alongside `gtk-theme`. After switching, **log out and back in**
 (or restart GTK apps) for everything to repaint.
+
+## Wallpapers
+
+Alt+Shift+P also swaps the desktop wallpaper to match the theme:
+
+- The images live in `~/.local/share/backgrounds/cosmic-purple/light.jpg`
+  and `~/.local/share/backgrounds/cosmic-purple/dark.jpg`.
+- `themes/cosmic-purple-toggle.sh` rewrites the `source: Path("...")` line
+  in `~/.config/cosmic/com.system76.CosmicBackground/v1/all` — the
+  `cosmic-bg` daemon watches that file and repaints **live**, no logout or
+  login needed.
+
+Setting wallpapers is **opt-in**. At install time `install.sh` asks
+`Set a different wallpaper for each theme (light/dark)? [y/N]` and, on
+yes, prompts for a path per theme being installed (`--light-only` → light
+only, `--dark-only` → dark only, otherwise both). Pass `--no-prompt` to
+skip the question entirely for scripted installs. The paths are forwarded
+to `install-shortcut.sh` → `themes/set-wallpaper.sh`.
+
+To change the wallpapers later, use `themes/set-wallpaper.sh` (also
+installed to `~/.local/bin/cosmic-purple-set-wallpaper.sh`):
+
+```
+sh themes/set-wallpaper.sh --light /path/light.jpg --dark /path/dark.jpg
+sh themes/set-wallpaper.sh --both /path/light.jpg /path/dark.jpg
+sh themes/set-wallpaper.sh          # interactive menu
+```
+
+Re-running is idempotent; old images are overwritten and missing paths are
+skipped with a warning. If the theme you just changed is the currently
+active one, the new image is applied live right away.
 
 ## How it works
 
@@ -140,11 +177,12 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | Path | Purpose |
 |---|---|
 | `README.md`                       | this file |
-| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply) |
+| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply + interactive wallpaper prompt) |
 | `themes/gtk-cosmic-theme.sh`      | builds GTK themes (`Cosmic-Purple` / `Cosmic-Purple-Dark`) for LibreWolf etc. |
 | `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
-| `themes/install-shortcut.sh`      | installs the toggle script + binds Alt+Shift+P. Portable across users. |
-| `themes/cosmic-purple-toggle.sh`  | the actual flipper — bound to Alt+Shift+P |
+| `themes/install-shortcut.sh`      | installs the toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Portable across users. |
+| `themes/set-wallpaper.sh`         | change the light/dark wallpapers Alt+Shift+P swaps (`--light`/`--dark`/`--both` or interactive menu) |
+| `themes/cosmic-purple-toggle.sh`  | the actual flipper — swaps theme + wallpaper, bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 
 ## Reproducing across machines
@@ -156,6 +194,7 @@ install:
 git clone <this-repo>
 cd pop_os_purple_theme
 sh install.sh --apply-dark    # or --apply-light
+sh install.sh --apply-dark --no-prompt   # scripted: skip the wallpaper prompt
 ```
 
 No privileged operations; no dependencies beyond `bash`, `sed`,

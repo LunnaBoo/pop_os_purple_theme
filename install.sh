@@ -10,6 +10,12 @@
 #     sh install.sh --apply-light    # build both, apply Cosmic-Purple
 #     sh install.sh --dark-only      # build only Cosmic-Purple-Dark
 #     sh install.sh --light-only     # build only Cosmic-Purple
+#     sh install.sh --no-prompt      # skip the interactive wallpaper prompt
+#
+# Alt+Shift+P is wired to toggle the theme (and the wallpaper, if you opt
+# in). After building you're optionally asked whether to set per-theme
+# wallpapers; that prompt is skipped with --no-prompt or when stdin isn't
+# a TTY (e.g. scripted installs).
 #
 # No sudo needed. Run from anywhere.
 
@@ -25,14 +31,16 @@ THEME_SH="$BUNDLE/themes/gtk-cosmic-theme.sh"
 
 BUILD_ARGS=
 APPLY_THEME=
+NO_PROMPT=
 for a in "$@"; do
     case "$a" in
         --dark-only)   BUILD_ARGS="--dark-only"  ;;
         --light-only)  BUILD_ARGS="--light-only" ;;
         --apply-dark)  APPLY_THEME=Cosmic-Purple-Dark ;;
         --apply-light) APPLY_THEME=Cosmic-Purple ;;
+        --no-prompt)   NO_PROMPT=1 ;;
         --help|-h)
-            sed -n '2,16p' "$0"
+            sed -n '2,21p' "$0"
             exit 0 ;;
         *) die "unknown arg: $a" ;;
     esac
@@ -56,12 +64,61 @@ if [ -f "$NATIVE_SH" ] && [ -d ~/.config/cosmic ]; then
     say ""
 fi
 
-# --- install Ctrl+Shift+P shortcut ------------------------------------------
-# Wires Ctrl+Shift+P to toggle between Cosmic-Purple-Dark and Cosmic-Purple.
+# --- optional per-theme wallpapers (interactive) ----------------------------
+# Asks whether to set a wallpaper for each theme being installed. Skipped
+# entirely with --no-prompt or when stdin isn't a TTY (scripted installs).
+LIGHT_WP=
+DARK_WP=
+prompt_wallpaper() {
+    _label=$1
+    printf 'Path to the %s-theme wallpaper image (blank to skip): ' "$_label"
+    _p=
+    read -r _p || true
+    if [ -z "$_p" ]; then
+        say "  (no path - skipping $_label wallpaper)"
+    elif [ -f "$_p" ]; then
+        if [ "$_label" = "light" ]; then
+            LIGHT_WP=$_p
+        else
+            DARK_WP=$_p
+        fi
+    else
+        say "  (file not found: $_p - skipping $_label wallpaper)"
+    fi
+}
+
+# Which themes are being installed (from the build selection).
+TARGET=both
+case "$BUILD_ARGS" in
+    --light-only) TARGET=light ;;
+    --dark-only)  TARGET=dark ;;
+esac
+
+if [ -z "$NO_PROMPT" ] && [ -t 0 ] && [ -d ~/.config/cosmic ]; then
+    printf 'Set a different wallpaper for each theme (light/dark)? [y/N] '
+    _ans=
+    read -r _ans || true
+    case "$_ans" in
+        y|Y|yes|YES|Yes)
+            case "$TARGET" in
+                light) prompt_wallpaper light ;;
+                dark)  prompt_wallpaper dark ;;
+                *)     prompt_wallpaper light; prompt_wallpaper dark ;;
+            esac
+            ;;
+    esac
+fi
+
+# --- install Alt+Shift+P shortcut ------------------------------------------
+# Wires Alt+Shift+P to toggle between Cosmic-Purple-Dark and Cosmic-Purple,
+# forwarding any wallpapers collected above (opt-in).
 SHORTCUT_SH="$BUNDLE/themes/install-shortcut.sh"
 if [ -f "$SHORTCUT_SH" ] && [ -d ~/.config/cosmic ]; then
-    say "==> Wiring Ctrl+Shift+P theme-toggle shortcut ..."
-    sh "$SHORTCUT_SH" || say "  (shortcut install failed - run manually: sh $SHORTCUT_SH)"
+    say "==> Wiring Alt+Shift+P theme-toggle shortcut ..."
+    set --
+    [ -n "$LIGHT_WP" ] && set -- "$@" --light "$LIGHT_WP"
+    [ -n "$DARK_WP" ]  && set -- "$@" --dark  "$DARK_WP"
+    sh "$SHORTCUT_SH" "$@" || say "  (shortcut install failed - run manually: sh $SHORTCUT_SH)"
     say ""
 fi
 
