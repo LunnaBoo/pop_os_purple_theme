@@ -28,10 +28,11 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 
 | Script | Flag | What it does |
 |---|---|---|
-| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Optionally ask for per-theme wallpapers. Print manual apply command. |
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
 | `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
 | `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
-| `install.sh` | `--no-prompt` | Skip the interactive per-theme wallpaper prompt (for scripted installs / CI) |
+| `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme) for scripted installs / CI |
+| `install.sh` | `--librewolf` | Apply the LibreWolf color-scheme fix (below) without asking |
 | `themes/gtk-cosmic-theme.sh` | _(none)_ | Build both `~/.local/share/themes/Cosmic-Purple` and `-Dark` |
 | `themes/gtk-cosmic-theme.sh` | `--dark-only` | Only rebuild the dark variant |
 | `themes/gtk-cosmic-theme.sh` | `--light-only` | Only rebuild the light variant |
@@ -44,6 +45,8 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 | `themes/set-wallpaper.sh` | `--dark PATH` | Set the dark-theme wallpaper to `PATH` |
 | `themes/set-wallpaper.sh` | `--both LIGHT DARK` | Set both wallpapers at once |
 | `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark` **and** swaps the wallpaper light↔dark. Bound to Alt+Shift+P by default. |
+| `themes/librewolf-color-scheme.sh` | _(none)_ | Write the three color-scheme prefs into every LibreWolf profile's `user.js` (backup first). Idempotent. |
+| `themes/librewolf-color-scheme.sh` | `--help` (`-h`) | Print usage |
 
 Everything uses `$HOME` (no hardcoded `/home/yourname`) and runs as a normal user — no `sudo` needed.
 
@@ -93,6 +96,34 @@ sh themes/set-wallpaper.sh          # interactive menu
 Re-running is idempotent; old images are overwritten and missing paths are
 skipped with a warning. If the theme you just changed is the currently
 active one, the new image is applied live right away.
+
+## LibreWolf
+
+LibreWolf ships `privacy.resistFingerprinting = true` by default, which
+spoofs every website's `prefers-color-scheme` to `light` — so sites never
+follow the system dark/light theme you set here.
+`themes/librewolf-color-scheme.sh` fixes that by disabling RFP and
+enabling the modern fingerprinting protection (FPP) with a
+`CSSPrefersColorScheme` exemption, writing three prefs into every
+LibreWolf profile's `user.js`:
+
+```
+user_pref("privacy.resistFingerprinting", false);
+user_pref("privacy.fingerprintingProtection", true);
+user_pref("privacy.fingerprintingProtection.overrides", "+AllTargets,-CSSPrefersColorScheme");
+```
+
+`install.sh` offers this after building — it only asks when LibreWolf
+profiles are found and stdin is a TTY. Pass `--librewolf` to apply it
+without asking, or `--no-prompt` to skip the question. Profiles are
+found under `~/.config/librewolf/librewolf` (LibreWolf 157+),
+`~/.librewolf` and the flatpak path; each profile's `user.js` gets a
+timestamped `.bak.<ts>` backup first. Re-running is idempotent — the
+three prefs are rewritten, nothing is duplicated.
+
+This only affects how *websites* pick light/dark. The LibreWolf UI theme
+itself is a GTK app, themed separately by the GTK themes above — running
+this script doesn't change LibreWolf's appearance.
 
 ## How it works
 
@@ -182,6 +213,7 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
 | `themes/install-shortcut.sh`      | installs the toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Portable across users. |
 | `themes/set-wallpaper.sh`         | change the light/dark wallpapers Alt+Shift+P swaps (`--light`/`--dark`/`--both` or interactive menu) |
+| `themes/librewolf-color-scheme.sh` | makes LibreWolf websites follow the system dark/light theme (disables RFP, enables FPP with a `CSSPrefersColorScheme` exemption). Idempotent `user.js` writer, backups first. |
 | `themes/cosmic-purple-toggle.sh`  | the actual flipper — swaps theme + wallpaper, bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 

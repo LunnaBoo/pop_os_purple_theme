@@ -10,12 +10,18 @@
 #     sh install.sh --apply-light    # build both, apply Cosmic-Purple
 #     sh install.sh --dark-only      # build only Cosmic-Purple-Dark
 #     sh install.sh --light-only     # build only Cosmic-Purple
-#     sh install.sh --no-prompt      # skip the interactive wallpaper prompt
+#     sh install.sh --no-prompt      # skip the interactive prompts (wallpapers, LibreWolf)
+#     sh install.sh --librewolf      # apply the LibreWolf color-scheme fix without asking
 #
 # Alt+Shift+P is wired to toggle the theme (and the wallpaper, if you opt
 # in). After building you're optionally asked whether to set per-theme
 # wallpapers; that prompt is skipped with --no-prompt or when stdin isn't
 # a TTY (e.g. scripted installs).
+#
+# If LibreWolf is installed you're also asked whether to make websites
+# follow the system dark/light theme (LibreWolf forces sites to "light"
+# by default — see themes/librewolf-color-scheme.sh). Pass --librewolf
+# to apply it without asking; --no-prompt skips the question entirely.
 #
 # No sudo needed. Run from anywhere.
 
@@ -32,6 +38,7 @@ THEME_SH="$BUNDLE/themes/gtk-cosmic-theme.sh"
 BUILD_ARGS=
 APPLY_THEME=
 NO_PROMPT=
+LIBREWOLF=
 for a in "$@"; do
     case "$a" in
         --dark-only)   BUILD_ARGS="--dark-only"  ;;
@@ -39,8 +46,9 @@ for a in "$@"; do
         --apply-dark)  APPLY_THEME=Cosmic-Purple-Dark ;;
         --apply-light) APPLY_THEME=Cosmic-Purple ;;
         --no-prompt)   NO_PROMPT=1 ;;
+        --librewolf)   LIBREWOLF=1 ;;
         --help|-h)
-            sed -n '2,21p' "$0"
+            sed -n '2,26p' "$0"
             exit 0 ;;
         *) die "unknown arg: $a" ;;
     esac
@@ -62,6 +70,33 @@ if [ -f "$NATIVE_SH" ] && [ -d ~/.config/cosmic ]; then
     say "==> Recoloring COSMIC native theme ..."
     sh "$NATIVE_SH" || say "  (native recolor failed - GTK-only theme will still apply)"
     say ""
+fi
+
+# --- optional LibreWolf color-scheme fix (interactive) ----------------------
+# LibreWolf ships resistFingerprinting on by default, which spoofs every
+# website's prefers-color-scheme to "light" so sites never follow the
+# system theme. The fix disables RFP and enables fingerprinting protection
+# with a CSSPrefersColorScheme exemption (themes/librewolf-color-scheme.sh).
+# Asked only when LibreWolf profiles exist; --librewolf forces it, and
+# --no-prompt (or a non-TTY stdin) skips the question. Never fatal.
+LW_SH="$BUNDLE/themes/librewolf-color-scheme.sh"
+LW_WANT=
+if [ -f "$LW_SH" ]; then
+    if [ -n "$LIBREWOLF" ]; then
+        LW_WANT=1
+    elif [ -z "$NO_PROMPT" ] && [ -t 0 ] && sh "$LW_SH" --check >/dev/null 2>&1; then
+        printf 'Make LibreWolf websites follow the system dark/light theme? [y/N] '
+        _ans=
+        read -r _ans || true
+        case "$_ans" in
+            y|Y|yes|YES|Yes) LW_WANT=1 ;;
+        esac
+    fi
+    if [ -n "$LW_WANT" ]; then
+        say "==> Making LibreWolf websites follow the system dark/light theme ..."
+        sh "$LW_SH" || say "  (LibreWolf fix failed - continuing anyway)"
+        say ""
+    fi
 fi
 
 # --- optional per-theme wallpapers (interactive) ----------------------------
