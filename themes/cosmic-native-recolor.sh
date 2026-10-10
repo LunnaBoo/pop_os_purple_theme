@@ -174,16 +174,22 @@ recolor_light() {
 fix_toggle_knob_light() {
     find "$1" -type f -exec sed -i -E \
       -e 's|^[[:space:]]+on: "#161616FF"|on: "#faf4edFF"|' \
-      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#faf4edA6"|' \
-      -e 's|^[[:space:]]+border: "#161616FF"|border: "#ded5cbFF"|' \
-      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#faf4ed80"|' \
       -e 's|^[[:space:]]+on: "#272727FF"|on: "#faf4edFF"|' \
+      -e 's|^[[:space:]]+on: "#383447FF"|on: "#faf4edFF"|' \
+      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#faf4edA6"|' \
+      -e 's|^[[:space:]]+on_disabled: "#383447A6"|on_disabled: "#faf4edA6"|' \
+      -e 's|^[[:space:]]+border: "#161616FF"|border: "#ded5cbFF"|' \
+      -e 's|^[[:space:]]+border: "#383447FF"|border: "#ded5cbFF"|' \
+      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#faf4ed80"|' \
+      -e 's|^[[:space:]]+disabled_border: "#38344780"|disabled_border: "#faf4ed80"|' \
       {} \;
 }
 fix_toggle_knob_dark() {
     find "$1" -type f -exec sed -i -E \
       -e 's|^[[:space:]]+on: "#161616FF"|on: "#e0def4FF"|' \
+      -e 's|^[[:space:]]+on: "#383447FF"|on: "#e0def4FF"|' \
       -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#e0def4A6"|' \
+      -e 's|^[[:space:]]+on_disabled: "#383447A6"|on_disabled: "#e0def4A6"|' \
       -e 's|^[[:space:]]+border: "#161616FF"|border: "#e0def480"|' \
       -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#e0def480"|' \
       {} \;
