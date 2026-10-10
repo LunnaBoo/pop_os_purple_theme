@@ -78,17 +78,59 @@ recolor_dark() {
 
 # Light variant uses different hex values (light blue-gray backgrounds,
 # darker reddish-purple accent). Mapped to cosmic purple *light* palette.
-# E-ink paper tones for backgrounds: avoids pure white which strains eyes.
-#   paper (window):   #c5c5c1 (canonical e-ink mid warm-grey)
-#   paper (component):#c9c9c5 (slightly lighter for cards/popovers)
-#   paper (headerbar):#b8b8b4 (slightly darker, like e-ink plastic bezel)
+# E-ink paper tones for backgrounds with subtle yellow/beige tint:
+#   paper main       : #c5c4ba  R197 G196 B186  (subtle aged paper)
+#   paper secondary  : #c9c8c0  R201 G200 B192  (lighter, for cards/popovers)
+#   paper bezel/dark : #b8b6ac  R184 G182 B172  (headerbar, sidebar, bezel)
+#   paper deeper     : #b3b1a8  R179 G177 B168  (deeper divider/border)
+# The B channel is dropped 8-10 units relative to R/G to evoke warm beige
+# without committing to a tint; the result reads as 'aged paper' not 'yellow'.
+# Stock light variant uses BOTH the background.* family (#CED8EA, #F0F5FF, ...)
+# AND primary/secondary surfaces (#FCFCFC, #F5F5F5, #EBEBEB, ...). All of them
+# need to map, otherwise primary/secondary/button surfaces will look
+# disconnected from the rest of the e-ink palette.
 recolor_light() {
     THEME_DIR=$1
+    # Three-tier light surface mapping. Every near-white stock hex lands
+    # in one of:
+    #   tier 1 (paper main):     #c5c4ba   ambient / base surfaces
+    #   tier 2 (paper component):#c9c8c0   elevated cards / popovers
+    #   tier 3 (bezel / border): #b8b6ac   dividers, outlines, small_widget
+    # Stock values feed those tiers based on what role they played in
+    # light surfaces (base -> tier 1, component -> tier 2, divider/small_widget -> tier 3).
+    # This collapses every visible surface onto two paper tones so the
+    # theme reads as coherent aged-paper e-ink instead of disconnected greys.
     find "$THEME_DIR" -type f -exec sed -i -E \
-      -e 's|#CED8EA|#c5c5c1|gi' \
-      -e 's|#F0F5FF|#c9c9c5|gi' \
-      -e 's|#F1F6FF|#c9c9c5|gi' \
-      -e 's|#F3F7FF|#c5c5c1|gi' \
+      -e 's|#D7D7D7|#c5c4ba|gi' \
+      -e 's|#EBEBEB|#c5c4ba|gi' \
+      -e 's|#FCFCFC|#c5c4ba|gi' \
+      -e 's|#FAFCFF|#c5c4ba|gi' \
+      -e 's|#FCFCFF|#c5c4ba|gi' \
+      -e 's|#CED8EA|#c5c4ba|gi' \
+      -e 's|#FFFFFF|#c5c4ba|gi' \
+      \
+      -e 's|#DADADA|#c9c8c0|gi' \
+      -e 's|#DEDEDE|#c9c8c0|gi' \
+      -e 's|#E2E2E2|#c9c8c0|gi' \
+      -e 's|#DDDDDD|#c9c8c0|gi' \
+      -e 's|#EEEEEE|#c9c8c0|gi' \
+      -e 's|#E1EBFE|#c9c8c0|gi' \
+      -e 's|#F0F5FF|#c9c8c0|gi' \
+      -e 's|#F1F6FF|#c9c8c0|gi' \
+      -e 's|#F5F5F5|#c9c8c0|gi' \
+      -e 's|#F6F6F6|#c9c8c0|gi' \
+      -e 's|#F3F7FF|#c9c8c0|gi' \
+      \
+      -e 's|#C2C2C2|#b8b6ac|gi' \
+      -e 's|#CACACA|#b8b6ac|gi' \
+      -e 's|#D2D2D2|#b8b6ac|gi' \
+      -e 's|#B0B0B0|#b8b6ac|gi' \
+      \
+      -e 's|#c5c5c1|#c5c4ba|gi' \
+      -e 's|#c9c9c5|#c9c8c0|gi' \
+      -e 's|#b8b8b4|#b8b6ac|gi' \
+      -e 's|#b3b1a8|#b3b1a8|gi' \
+      \
       -e 's|#2C3444|#1a0d21|gi' \
       -e 's|#0B1220|#1a0d21|gi' \
       -e 's|#1F2736|#1a0d21|gi' \
