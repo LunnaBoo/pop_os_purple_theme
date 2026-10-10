@@ -28,7 +28,7 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 
 | Script | Flag | What it does |
 |---|---|---|
-| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Install kitty auto dark/light theme files (when a kitty config dir exists). Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
 | `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
 | `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
 | `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme) for scripted installs / CI |
@@ -47,6 +47,8 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 | `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark` **and** swaps the wallpaper light↔dark. Bound to Alt+Shift+P by default. |
 | `themes/librewolf-color-scheme.sh` | _(none)_ | Write the three color-scheme prefs into every LibreWolf profile's `user.js` (backup first). Idempotent. |
 | `themes/librewolf-color-scheme.sh` | `--help` (`-h`) | Print usage |
+| `themes/install-kitty-theme.sh` | _(none)_ | Install the three kitty auto-theme files (`themes/kitty/*.auto.conf`) into `~/.config/kitty` so kitty follows the system dark/light theme (kitty >= 0.38). Idempotent; prints a message and exits 0 if the kitty config dir is missing. |
+| `themes/install-kitty-theme.sh` | `--help` (`-h`) | Print usage |
 
 Everything uses `$HOME` (no hardcoded `/home/yourname`) and runs as a normal user — no `sudo` needed.
 
@@ -124,6 +126,35 @@ three prefs are rewritten, nothing is duplicated.
 This only affects how *websites* pick light/dark. The LibreWolf UI theme
 itself is a GTK app, themed separately by the GTK themes above — running
 this script doesn't change LibreWolf's appearance.
+
+## kitty
+
+The kitty terminal follows the system dark/light mode **natively** on
+kitty **>= 0.38** via three files in its config dir:
+
+```
+~/.config/kitty/dark-theme.auto.conf
+~/.config/kitty/light-theme.auto.conf
+~/.config/kitty/no-preference-theme.auto.conf
+```
+
+- `dark-theme.auto.conf` = the cosmic-purple **dark** palette
+- `light-theme.auto.conf` = the cosmic-purple **light** palette
+- `no-preference-theme.auto.conf` = light (used when the OS reports no
+  preference)
+
+kitty detects the OS color scheme through the XDG portal and switches
+**live** — no reload and no signal needed. Both Alt+Shift+P (the theme
+toggle this repo wires up) and COSMIC Settings → Appearance set that
+preference, so kitty follows along either way.
+
+`themes/install-kitty-theme.sh` installs the three files from
+`themes/kitty/` into `~/.config/kitty/`; `install.sh` also runs it
+automatically whenever a kitty config dir exists (no prompt, non-fatal).
+Re-running overwrites the same content — idempotent.
+
+Kitty **< 0.38** ignores these files (they were added in 0.38), so on
+older installs the script is a harmless no-op.
 
 ## How it works
 
@@ -214,6 +245,7 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | `themes/install-shortcut.sh`      | installs the toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Portable across users. |
 | `themes/set-wallpaper.sh`         | change the light/dark wallpapers Alt+Shift+P swaps (`--light`/`--dark`/`--both` or interactive menu) |
 | `themes/librewolf-color-scheme.sh` | makes LibreWolf websites follow the system dark/light theme (disables RFP, enables FPP with a `CSSPrefersColorScheme` exemption). Idempotent `user.js` writer, backups first. |
+| `themes/install-kitty-theme.sh` | installs the kitty auto dark/light theme files (`themes/kitty/`) into `~/.config/kitty` so kitty follows the system dark/light theme natively (kitty >= 0.38). Idempotent; skips with exit 0 if no kitty config dir. |
 | `themes/cosmic-purple-toggle.sh`  | the actual flipper — swaps theme + wallpaper, bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 

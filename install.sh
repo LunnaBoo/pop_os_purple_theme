@@ -23,6 +23,11 @@
 # by default — see themes/librewolf-color-scheme.sh). Pass --librewolf
 # to apply it without asking; --no-prompt skips the question entirely.
 #
+# If the kitty config dir exists, its auto dark/light theme files are
+# installed too (themes/install-kitty-theme.sh) so the kitty terminal
+# follows the system dark/light mode natively (kitty >= 0.38). No prompt,
+# never fatal.
+#
 # No sudo needed. Run from anywhere.
 
 set -eu
@@ -48,7 +53,7 @@ for a in "$@"; do
         --no-prompt)   NO_PROMPT=1 ;;
         --librewolf)   LIBREWOLF=1 ;;
         --help|-h)
-            sed -n '2,26p' "$0"
+            sed -n '2,31p' "$0"
             exit 0 ;;
         *) die "unknown arg: $a" ;;
     esac
@@ -97,6 +102,20 @@ if [ -f "$LW_SH" ]; then
         sh "$LW_SH" || say "  (LibreWolf fix failed - continuing anyway)"
         say ""
     fi
+fi
+
+# --- optional kitty auto dark/light theme files (non-interactive) ------------
+# If kitty's config dir exists, install the dark/light/no-preference
+# auto-theme files (themes/kitty/) so kitty follows the system dark/light
+# theme natively (kitty >= 0.38). Low-impact color files: no prompt, and
+# a failure only warns and continues. The script itself also exits 0
+# gracefully when the config dir is missing, so the check here is just a
+# cheap guard to skip it entirely.
+KITTY_SH="$BUNDLE/themes/install-kitty-theme.sh"
+if [ -f "$KITTY_SH" ] && [ -d "$HOME/.config/kitty" ]; then
+    say "==> Installing kitty auto dark/light theme files ..."
+    sh "$KITTY_SH" || say "  (kitty theme install failed - continuing anyway)"
+    say ""
 fi
 
 # --- optional per-theme wallpapers (interactive) ----------------------------
