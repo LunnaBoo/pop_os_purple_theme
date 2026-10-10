@@ -55,10 +55,10 @@ TOGGLE_PATH="$HOME/.local/bin/cosmic-purple-toggle.sh"
 
 # Look for an existing binding for cosmic-purple-toggle.sh - any home path.
 EXISTING_PATH=$(awk '
-    /\(\s*$/                              { depth++; next }
-    /\)\s*,?\s*$/                         { if (depth > 0) depth--; next }
-    depth == 1 && /Spawn\(".*cosmic-purple-toggle\.sh"/ {
-        match($0, /Spawn\("[^"]+"/); print substr($0, RSTART+7, RLENGTH-8); exit
+    /Spawn\("[^"]*cosmic-purple-toggle\.sh"/ {
+        match($0, /Spawn\("[^"]+"/)
+        print substr($0, RSTART + 7, RLENGTH - 8)
+        exit
     }
 ' "$SC" 2>/dev/null || true)
 
