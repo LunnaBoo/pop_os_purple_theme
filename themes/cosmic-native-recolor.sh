@@ -165,9 +165,34 @@ recolor_light() {
       {} \;
 }
 
+# Toggle / icon-button knob visibility.
+# libcosmic's toggle widget pulls its knob color from
+# `cosmic.ron`'s icon_button.on (and button.border for the outline).
+# Stock has them at #161616FF (near-black) which is invisible against
+# the dark-purple accent track. Override to the paper / Dusk text so
+# the knob contrasts against the track.
+fix_toggle_knob_light() {
+    find "$1" -type f -exec sed -i -E \
+      -e 's|^[[:space:]]+on: "#161616FF"|on: "#faf4edFF"|' \
+      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#faf4edA6"|' \
+      -e 's|^[[:space:]]+border: "#161616FF"|border: "#ded5cbFF"|' \
+      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#faf4ed80"|' \
+      -e 's|^[[:space:]]+on: "#272727FF"|on: "#faf4edFF"|' \
+      {} \;
+}
+fix_toggle_knob_dark() {
+    find "$1" -type f -exec sed -i -E \
+      -e 's|^[[:space:]]+on: "#161616FF"|on: "#e0def4FF"|' \
+      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#e0def4A6"|' \
+      -e 's|^[[:space:]]+border: "#161616FF"|border: "#e0def480"|' \
+      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#e0def480"|' \
+      {} \;
+}
+
 # -- Dark variant (always present) -------------------------------------------
 recolor_dark "$SRC_DARK"
-say "recolored: $SRC_DARK"
+fix_toggle_knob_dark "$SRC_DARK"
+say "recolored: $SRC_DARK  (toggle-knob fix applied)"
 
 # -- Light variant - only if it already exists ------------------------------
 if [ -d "$SRC_LIGHT" ]; then
@@ -175,7 +200,8 @@ if [ -d "$SRC_LIGHT" ]; then
     cp -a "$SRC_LIGHT" "$BAK_LIGHT"
     say "backup: $BAK_LIGHT"
     recolor_light "$SRC_LIGHT"
-    say "recolored: $SRC_LIGHT"
+    fix_toggle_knob_light "$SRC_LIGHT"
+    say "recolored: $SRC_LIGHT  (toggle-knob fix applied)"
 fi
 
 # -- pin GTK theme so cosmic-settings-daemon doesn't fight us ----------------
@@ -210,14 +236,17 @@ say "  accent palette overrides applied"
 say "  accent pass complete"
 
 # -- Active window hint (focus border color) -------------------------------
-# Drive the focused-window border to your primary purple. bright enough
-# to see on both light cream and dark purple-bg. Some(...) wrapper is
-# the RON format for Option<Color> in cosmic-settings-config.
+# Drive the focused-window border to your primary purple. Bright
+# saturated purple so it stands out on both light cream and dark dusk.
+# Some(...) wrapper is the RON format for Option<Color>; window_hint=1
+# enables the border (None disables it, the default which left users
+# unable to tell which window was focused).
 for V in "$SRC_DARK" "$SRC_LIGHT"; do
     [ -f "$V/active_hint" ] || continue
     printf 'Some("#cf6febFF")\n' > "$V/active_hint"
+    printf '1\n' > "$V/window_hint"
 done
-say "  active_hint = Some(\"#cf6febFF\") (bright purple focus border)"
+say "  active_hint = Some(\"#cf6febFF\"), window_hint = 1 (focus border on, bright purple)"
 
 say ""
 say "Done. Log out + log in to see the change everywhere."
