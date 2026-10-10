@@ -59,38 +59,52 @@ say "backup: $BAK_DARK"
 # original stock and previous recolor outputs from this script).
 recolor_dark() {
     THEME_DIR=$1
+    # Rosé Pine Dusk surface tones:
+    #   paper main       : #191724   base window bg (Dusk "base")
+    #   raised surface   : #1f1b2e   cards / popovers (Dusk "surface")
+    #   sunken           : #26233a   inputs / active tab (Dusk "highlight_med")
+    #   deeper bezel     : #2c293d   borders / hover-tone
+    #   text             : #e0def4   primary fg
+    #   muted text       : #908caa   overlay
+    # Stock Dark uses a different gray ramp than stock Light; this
+    # mapping handles the actual COSMIC Dark stock hex values.
     find "$THEME_DIR" -type f -exec sed -i -E \
-      -e 's|#2B2E34|#191724|gi' \
-      -e 's|#383B42|#1f1b2e|gi' \
-      -e 's|#40434A|#1f1b2e|gi' \
-      -e 's|#484C52|#26233a|gi' \
-      -e 's|#4E5158|#26233a|gi' \
-      -e 's|#53565C|#2c293d|gi' \
-      -e 's|#5B5D63|#2c293d|gi' \
-      -e 's|#5F6268|#2c293d|gi' \
-      -e 's|#63666B|#383447|gi' \
-      -e 's|#6D6F75|#383447|gi' \
-      -e 's|#717479|#383447|gi' \
       -e 's|#1B1B1B|#0d0a1f|gi' \
       -e 's|#262626|#100c20|gi' \
-      -e 's|#303030|#1a1530|gi' \
-      -e 's|#C2CFE2|#e0def4|gi' \
-      -e 's|#B5C1D4|#e0def4|gi' \
-      -e 's|#CEDBEF|#e0def4|gi' \
-      -e 's|#DFECFF|#d1c8ec|gi' \
-      -e 's|#D8E5F9|#d1c8ec|gi' \
-      -e 's|#C5D2E5|#d1c8ec|gi' \
+      -e 's|#272727|#0d0a1f|gi' \
+      -e 's|#2E2E2E|#1f1b2e|gi' \
+      -e 's|#343434|#1a1530|gi' \
+      -e 's|#363636|#1f1b2e|gi' \
+      -e 's|#3B3B3B|#1f1b2e|gi' \
+      -e 's|#434343|#1f1b2e|gi' \
+      -e 's|#4A4A4A|#26233a|gi' \
+      -e 's|#4F4F4F|#1f1b2e|gi' \
+      -e 's|#585858|#26233a|gi' \
+      -e 's|#5E5E5E|#26233a|gi' \
+      -e 's|#626262|#26233a|gi' \
+      -e 's|#C0C0C0|#e0def4|gi' \
+      -e 's|#CACACA|#e0def4|gi' \
+      -e 's|#D0D0D0|#e0def4|gi' \
+      -e 's|#E7E7E7|#e0def4|gi' \
+      -e 's|#F8F8F8|#e0def4|gi' \
+      -e 's|#BEBEBE|#383447|gi' \
+      -e 's|#444444|#383447|gi' \
+      -e 's|#515151|#383447|gi' \
+      -e 's|#9E9E9E|#908caa|gi' \
+      -e 's|#808080|#908caa|gi' \
+      \
       -e 's|#E79CFE|#3a1450|gi' \
       -e 's|#CD91DF|#5a1d8a|gi' \
       -e 's|#7E598A|#2a0c40|gi' \
-      -e 's|#00525A|#3a1450|gi' \
-      -e 's|#14555C|#5a1d8a|gi' \
-      -e 's|#5F888C|#2a0c40|gi' \
-      -e 's|#7FA8AC|#9893a5|gi' \
+      -e 's|#CF7DFF|#3a1450|gi' \
+      -e 's|#63D0DF|#3a1450|gi' \
+      -e 's|#63BAC6|#5a1d8a|gi' \
+      -e 's|#3C737A|#2a0c40|gi' \
+      -e 's|#3E88FF|#cf6feb|gi' \
       -e 's|#326870|#cf6feb|gi' \
-      -e 's|#3C737A|#cf6feb|gi' \
-      -e 's|#63BAC6|#cf6feb|gi' \
-      -e 's|#63D0DF|#cf6feb|gi' \
+      -e 's|#48B9C7|#cf6feb|gi' \
+      -e 's|#92CF9C|#9893a5|gi' \
+      -e 's|#F7E062|#ea9d34|gi' \
       {} \;
 }
 
@@ -181,20 +195,16 @@ fi
 # The accent{,_,button,text,*} fields below drive buttons/links/toggles.
 say ""
 say "==> Forcing accent palette overrides (primary #3a1450, secondary #ea9d34)..."
-for VARIANT in "$SRC_DARK"; do
-    find "$VARIANT" -type f -exec sed -i -E \
-      -e 's|"accent_purple: "#[0-9a-fA-F]{6,8}"|"accent_purple: "#3a1450"|g' \
-      -e 's|"accent_blue: "#[0-9a-fA-F]{6,8}"|"accent_blue: "#ea9d34"|g' \
-      -e 's|"accent_yellow: "#[0-9a-fA-F]{6,8}"|"accent_yellow: "#ea9d34"|g' \
+apply_palette_accent() {
+    find "$1" -type f -exec sed -i -E \
+      -e 's|(accent_purple: ")(#[0-9a-fA-F]{6,8}")|\1#3a1450"|g' \
+      -e 's|(accent_blue: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
+      -e 's|(accent_yellow: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
       {} \;
-done
-if [ -d "$SRC_LIGHT" ]; then
-    find "$SRC_LIGHT" -type f -exec sed -i -E \
-      -e 's|"accent_purple: "#[0-9a-fA-F]{6,8}"|"accent_purple: "#3a1450"|g' \
-      -e 's|"accent_blue: "#[0-9a-fA-F]{6,8}"|"accent_blue: "#ea9d34"|g' \
-      -e 's|"accent_yellow: "#[0-9a-fA-F]{6,8}"|"accent_yellow: "#ea9d34"|g' \
-      {} \;
-fi
+}
+apply_palette_accent "$SRC_DARK"
+[ -d "$SRC_LIGHT" ] && apply_palette_accent "$SRC_LIGHT"
+say "  accent palette overrides applied"
 # (Intentionally NOT re-running the recolor here - it would undo palette
 # overrides like accent_blue since the recolor mapping covers #00525A.)
 say "  accent pass complete"
