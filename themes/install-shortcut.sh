@@ -1,13 +1,17 @@
 #!/bin/sh
 # install-shortcut.sh
-# Wires Ctrl+Shift+P to cosmic-purple-toggle.sh on this COSMIC session.
-# Idempotent: running twice does not duplicate the binding.
+# Wires Alt+Shift+P to cosmic-purple-toggle.sh on this COSMIC session.
+# Idempotent and portable across machines / users:
+#   - Always resolves $HOME at install time, so the absolute path baked
+#     into the shortcuts RON matches the user running it.
+#   - Re-running rewrites any prior Spawn entry that pointed at a stale
+#     $HOME (e.g. when ~/.config is synced across machines).
 #
 # Run this from install.sh, or standalone after a fresh install:
 #     sh install-shortcut.sh
 #
-# Revert: delete the toggle binary and restore the shortcuts file
-#         (a backup is left at .bak.<timestamp>).
+# Revert: delete ~/.local/bin/cosmic-purple-toggle.sh and restore the
+#         shortcuts file from the backup left at .bak.<timestamp>.
 
 set -eu
 
@@ -33,7 +37,7 @@ mkdir -p ~/.local/bin
 install -m 755 "$TOGGLE_SRC" ~/.local/bin/cosmic-purple-toggle.sh
 say "Installed: ~/.local/bin/cosmic-purple-toggle.sh"
 
-# 3) Add the Ctrl+Shift+P binding.
+# 3) Add the Alt+Shift+P binding.
 SC=~/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom
 if [ ! -f "$SC" ]; then
     die "shortcuts file not found: $SC\nIs this Pop!_OS COSMIC 24.04?"
@@ -44,15 +48,49 @@ BAK="$SC.bak.$TS"
 cp -a "$SC" "$BAK"
 say "Backup: $BAK"
 
-# Use a path string suitable for inclusion in the RON file.
-# We always install to ~/.local/bin/cosmic-purple-toggle.sh, which is a
-# stable absolute path that survives git clones and moving the repo.
+# The toggle lives at $HOME/.local/bin/cosmic-purple-toggle.sh. Resolve
+# it now so the RON file holds THIS user's absolute home (not a copy from
+# another machine).
 TOGGLE_PATH="$HOME/.local/bin/cosmic-purple-toggle.sh"
 
-if grep -q "Spawn(\"$TOGGLE_PATH\")" "$SC"; then
-    say "Alt+Shift+P binding already present - nothing to do."
-else
-    python3 - "$SC" "$TOGGLE_PATH" <<'PYEOF'
+# Look for an existing binding for cosmic-purple-toggle.sh - any home path.
+EXISTING_PATH=$(awk '
+    /\(\s*$/                              { depth++; next }
+    /\)\s*,?\s*$/                         { if (depth > 0) depth--; next }
+    depth == 1 && /Spawn\(".*cosmic-purple-toggle\.sh"/ {
+        match($0, /Spawn\("[^"]+"/); print substr($0, RSTART+7, RLENGTH-8); exit
+    }
+' "$SC" 2>/dev/null || true)
+
+if [ -n "$EXISTING_PATH" ] && [ "$EXISTING_PATH" = "$TOGGLE_PATH" ]; then
+    say "Alt+Shift+P binding already points at $TOGGLE_PATH - nothing to do."
+    exit 0
+fi
+
+if [ -n "$EXISTING_PATH" ]; then
+    say "Alt+Shift+P binding points at $EXISTING_PATH, rewriting to $TOGGLE_PATH."
+    # Drop the existing entry (delete the entire tuple block) using Python.
+    python3 - "$SC" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+src = open(path).read()
+# Match the tuple block whose body contains Spawn(...) for our toggle.
+# Greedy across depth-1 entry, non-greedy internal, single replacement.
+pattern = re.compile(
+    r'\n[ \t]*\(\n[ \t]*modifiers:[ \t]*\[[^\]]*\],[ \t]*\n'
+    r'[ \t]*key:[ \t]*"p",[ \t]*\n[ \t]*\)[ \t]*:[ \t]*Spawn\("[^"]*cosmic-purple-toggle\.sh"[ \t]*\),?[ \t]*\n',
+    re.MULTILINE,
+)
+new, n = pattern.subn('\n', src, count=1)
+if n != 1:
+    die('failed to remove previous binding (matched ' + str(n) + ')')
+assert new.endswith('}'), f'unexpected ending: {new[-30:]!r}'
+open(path, 'w').write(new)
+PYEOF
+fi
+
+# Append the fresh entry just before the closing '}' of the outermost block.
+python3 - "$SC" "$TOGGLE_PATH" <<'PYEOF'
 import sys
 path, toggle = sys.argv[1], sys.argv[2]
 src = open(path).read()
@@ -68,16 +106,14 @@ entry = (
 assert src.endswith('}'), f'unexpected file ending: {src[-30:]!r}'
 open(path, 'w').write(src[:-1] + entry + '}')
 PYEOF
-    say "Added Ctrl+Shift+P -> Spawn binding."
-fi
+
+say "Added Alt+Shift+P -> Spawn binding at $TOGGLE_PATH"
 
 say ""
 say "==> Done."
 say ""
-say "If Ctrl+Shift+P doesn't trigger at first try, the daemon may still"
-say "have the old config cached. Reload it with:"
-say "    killall -USR1 cosmic-comp   # signal-based reload (preferred)"
-say "    killall cosmic-comp         # cosmic-session will respawn"
+say "If Alt+Shift+P doesn't trigger at first try, log out + log back in."
+say "The daemon picks up new shortcuts on session restart."
 say ""
 say "Revert:"
 say "    rm ~/.local/bin/cosmic-purple-toggle.sh"

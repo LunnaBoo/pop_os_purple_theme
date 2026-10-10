@@ -17,20 +17,29 @@ anything under `/usr/share/themes/`.
 ## Install
 
 ```
-sh install.sh                # build both variants
-sh install.sh --apply-dark   # also set Cosmic-Purple-Dark  via gsettings
-sh install.sh --apply-light  # also set Cosmic-Purple        via gsettings
+git clone <this-repo>
+cd pop_os_purple_theme
+sh install.sh                 # build both variants + recolor everything
+sh install.sh --apply-dark    # also activate Cosmic-Purple-Dark
+sh install.sh --apply-light   # also activate Cosmic-Purple
 ```
 
-The installer does the same thing the long way:
+### Flags
 
-```
-sh themes/gtk-cosmic-theme.sh                 # build both
-sh themes/gtk-cosmic-theme.sh --dark-only     # only dark
-sh themes/gtk-cosmic-theme.sh --light-only    # only light
-```
+| Script | Flag | What it does |
+|---|---|---|
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Print manual apply command. |
+| `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
+| `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
+| `themes/gtk-cosmic-theme.sh` | _(none)_ | Build both `~/.local/share/themes/Cosmic-Purple` and `-Dark` |
+| `themes/gtk-cosmic-theme.sh` | `--dark-only` | Only rebuild the dark variant |
+| `themes/gtk-cosmic-theme.sh` | `--light-only` | Only rebuild the light variant |
+| `themes/gtk-cosmic-theme.sh` | `--help` | Print usage |
+| `themes/cosmic-native-recolor.sh` | _(none)_ | Recolors both libcosmic theme variants in `~/.config/cosmic/...CosmicTheme.{Dark,Light}/v2`. Idempotent. |
+| `themes/install-shortcut.sh` | _(none)_ | Installs toggle script + binds Alt+Shift+P. Idempotent; rewrites the binding if `$HOME` changed. |
+| `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark`. Bound to Alt+Shift+P by default. |
 
-Both scripts must run as your normal user — no `sudo` needed.
+Everything uses `$HOME` (no hardcoded `/home/yourname`) and runs as a normal user — no `sudo` needed.
 
 ## Apply
 
@@ -134,6 +143,8 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply) |
 | `themes/gtk-cosmic-theme.sh`      | builds GTK themes (`Cosmic-Purple` / `Cosmic-Purple-Dark`) for LibreWolf etc. |
 | `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
+| `themes/install-shortcut.sh`      | installs the toggle script + binds Alt+Shift+P. Portable across users. |
+| `themes/cosmic-purple-toggle.sh`  | the actual flipper — bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 
 ## Reproducing across machines
@@ -147,5 +158,13 @@ cd pop_os_purple_theme
 sh install.sh --apply-dark    # or --apply-light
 ```
 
-No privileged operations; no dependencies beyond `bash`, `sed`, and (for
-optional apply) `gsettings`.
+No privileged operations; no dependencies beyond `bash`, `sed`,
+`python3` (for the shortcut rebinder), and (for optional apply) `gsettings`.
+
+### Portability
+
+Everything resolves `$HOME` at install time. The Alt+Shift+P binding
+bakes in the *current* user's `~/.local/bin/cosmic-purple-toggle.sh`
+path into `~/.config/cosmic/.../custom`. Re-run
+`sh themes/install-shortcut.sh` on any machine or after a username
+change to rewrite the binding to that machine's home.
