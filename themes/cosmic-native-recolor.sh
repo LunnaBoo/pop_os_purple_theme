@@ -93,13 +93,13 @@ recolor_dark() {
       -e 's|#9E9E9E|#908caa|gi' \
       -e 's|#808080|#908caa|gi' \
       \
-      -e 's|#E79CFE|#3a1450|gi' \
-      -e 's|#CD91DF|#5a1d8a|gi' \
-      -e 's|#7E598A|#2a0c40|gi' \
-      -e 's|#CF7DFF|#3a1450|gi' \
-      -e 's|#63D0DF|#3a1450|gi' \
-      -e 's|#63BAC6|#5a1d8a|gi' \
-      -e 's|#3C737A|#2a0c40|gi' \
+      -e 's|#E79CFE|#cf6feb|gi' \
+      -e 's|#CD91DF|#b85ed5|gi' \
+      -e 's|#7E598A|#a04dc0|gi' \
+      -e 's|#CF7DFF|#cf6feb|gi' \
+      -e 's|#63D0DF|#cf6feb|gi' \
+      -e 's|#63BAC6|#b85ed5|gi' \
+      -e 's|#3C737A|#a04dc0|gi' \
       -e 's|#3E88FF|#cf6feb|gi' \
       -e 's|#326870|#cf6feb|gi' \
       -e 's|#48B9C7|#cf6feb|gi' \
@@ -146,16 +146,16 @@ recolor_light() {
       -e 's|#2C3444|#575279|gi' \
       -e 's|#0B1220|#575279|gi' \
       -e 's|#1F2736|#575279|gi' \
-      -e 's|#68217C|#3a1450|gi' \
-      -e 's|#3D0C11|#3a1450|gi' \
-      -e 's|#451D21|#5a1d8a|gi' \
-      -e 's|#7D6567|#2a0c40|gi' \
+      -e 's|#68217C|#cf6feb|gi' \
+      -e 's|#3D0C11|#cf6feb|gi' \
+      -e 's|#451D21|#b85ed5|gi' \
+      -e 's|#7D6567|#a04dc0|gi' \
       -e 's|#9E8688|#9893a5|gi' \
       -e 's|#A7B0C2|#9893a5|gi' \
       -e 's|#D58CFF|#ea9d34|gi' \
-      -e 's|#00525A|#3a1450|gi' \
-      -e 's|#14555C|#5a1d8a|gi' \
-      -e 's|#5F888C|#2a0c40|gi' \
+      -e 's|#00525A|#cf6feb|gi' \
+      -e 's|#14555C|#b85ed5|gi' \
+      -e 's|#5F888C|#a04dc0|gi' \
       -e 's|#7FA8AC|#9893a5|gi' \
       -e 's|#326870|#cf6feb|gi' \
       -e 's|#3C737A|#cf6feb|gi' \
@@ -229,7 +229,7 @@ say ""
 say "==> Forcing accent palette overrides (primary #3a1450, secondary #ea9d34)..."
 apply_palette_accent() {
     find "$1" -type f -exec sed -i -E \
-      -e 's|(accent_purple: ")(#[0-9a-fA-F]{6,8}")|\1#3a1450"|g' \
+      -e 's|(accent_purple: ")(#[0-9a-fA-F]{6,8}")|\1#cf6feb"|g' \
       -e 's|(accent_blue: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
       -e 's|(accent_yellow: ")(#[0-9a-fA-F]{6,8}")|\1#ea9d34"|g' \
       {} \;
