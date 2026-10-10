@@ -78,13 +78,17 @@ recolor_dark() {
 
 # Light variant uses different hex values (light blue-gray backgrounds,
 # darker reddish-purple accent). Mapped to cosmic purple *light* palette.
+# E-ink paper tones for backgrounds: avoids pure white which strains eyes.
+#   paper (window):   #c5c5c1 (canonical e-ink mid warm-grey)
+#   paper (component):#c9c9c5 (slightly lighter for cards/popovers)
+#   paper (headerbar):#b8b8b4 (slightly darker, like e-ink plastic bezel)
 recolor_light() {
     THEME_DIR=$1
     find "$THEME_DIR" -type f -exec sed -i -E \
-      -e 's|#CED8EA|#fbf8fc|gi' \
-      -e 's|#F0F5FF|#fdfaff|gi' \
-      -e 's|#F1F6FF|#fdfaff|gi' \
-      -e 's|#F3F7FF|#fbf8fc|gi' \
+      -e 's|#CED8EA|#c5c5c1|gi' \
+      -e 's|#F0F5FF|#c9c9c5|gi' \
+      -e 's|#F1F6FF|#c9c9c5|gi' \
+      -e 's|#F3F7FF|#c5c5c1|gi' \
       -e 's|#2C3444|#1a0d21|gi' \
       -e 's|#0B1220|#1a0d21|gi' \
       -e 's|#1F2736|#1a0d21|gi' \

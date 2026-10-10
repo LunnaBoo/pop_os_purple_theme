@@ -112,16 +112,22 @@ s|@define-color panel_fg_color white;|@define-color panel_fg_color #d9c7ec;|
 "
 
 # Light theme backgrounds + foregrounds.
+# E-ink paper palette: avoids pure white which strains eyes.
+#   paper (window/view):   #c5c5c1 (the canonical e-ink mid warm-grey)
+#   paper popover/card:   #c9c9c5 (slightly lighter)
+#   paper headerbar/panel:#b8b8b4 (slightly darker, like e-ink plastic bezel)
+#   ink  (text):          #1a0d21 (cosmic dark foreground, kept for legibility)
+#   accent:               stays cosmic purple
 LIGHT_BG="
-s|@define-color window_bg_color #fafafa;|@define-color window_bg_color #fbf8fc;|
-s|@define-color view_bg_color #ffffff;|@define-color view_bg_color #fdfaff;|
-s|@define-color headerbar_bg_color #ebebeb;|@define-color headerbar_bg_color #efe5f4;|
-s|@define-color sidebar_bg_color #ebebeb;|@define-color sidebar_bg_color #efe5f4;|
-s|@define-color dialog_bg_color #fafafa;|@define-color dialog_bg_color #fbf8fc;|
+s|@define-color window_bg_color #fafafa;|@define-color window_bg_color #c5c5c1;|
+s|@define-color view_bg_color #ffffff;|@define-color view_bg_color #c9c9c5;|
+s|@define-color headerbar_bg_color #ebebeb;|@define-color headerbar_bg_color #b8b8b4;|
+s|@define-color sidebar_bg_color #ebebeb;|@define-color sidebar_bg_color #b8b8b4;|
+s|@define-color dialog_bg_color #fafafa;|@define-color dialog_bg_color #c5c5c1;|
 s|@define-color headerbar_border_color rgba(0, 0, 0, 0.8);|@define-color headerbar_border_color rgba(107, 43, 138, 0.50);|
-s|@define-color headerbar_shade_color rgba(0, 0, 0, 0.12);|@define-color headerbar_shade_color rgba(107, 43, 138, 0.10);|
-s|@define-color headerbar_darker_shade_color rgba(0, 0, 0, 0.12);|@define-color headerbar_darker_shade_color rgba(107, 43, 138, 0.10);|
-s|@define-color shade_color rgba(0, 0, 0, 0.07);|@define-color shade_color rgba(107, 43, 138, 0.06);|
+s|@define-color headerbar_shade_color rgba(0, 0, 0, 0.12);|@define-color headerbar_shade_color rgba(20, 8, 26, 0.18);|
+s|@define-color headerbar_darker_shade_color rgba(0, 0, 0, 0.12);|@define-color headerbar_darker_shade_color rgba(20, 8, 26, 0.18);|
+s|@define-color shade_color rgba(0, 0, 0, 0.07);|@define-color shade_color rgba(20, 8, 26, 0.10);|
 s|@define-color scrollbar_outline_color white;|@define-color scrollbar_outline_color #ab6fd0;|
 s|@define-color window_fg_color #323232;|@define-color window_fg_color #1a0d21;|
 s|@define-color view_fg_color #333333;|@define-color view_fg_color #1a0d21;|
@@ -130,10 +136,10 @@ s|@define-color card_fg_color #333333;|@define-color card_fg_color #1a0d21;|
 s|@define-color popover_fg_color #333333;|@define-color popover_fg_color #1a0d21;|
 s|@define-color dialog_fg_color #323232;|@define-color dialog_fg_color #1a0d21;|
 s|@define-color sidebar_fg_color rgba(0, 0, 0, 0.8);|@define-color sidebar_fg_color #1a0d21;|
-s|@define-color sidebar_backdrop_color #f2f2f2;|@define-color sidebar_backdrop_color #efe5f4;|
-s|@define-color sidebar_shade_color rgba(0, 0, 0, 0.07);|@define-color sidebar_shade_color rgba(107, 43, 138, 0.06);|
-s|@define-color sidebar_border_color rgba(0, 0, 0, 0.07);|@define-color sidebar_border_color rgba(107, 43, 138, 0.10);|
-s|@define-color panel_bg_color black;|@define-color panel_bg_color #fbf8fc;|
+s|@define-color sidebar_backdrop_color #f2f2f2;|@define-color sidebar_backdrop_color #b8b8b4;|
+s|@define-color sidebar_shade_color rgba(0, 0, 0, 0.07);|@define-color sidebar_shade_color rgba(20, 8, 26, 0.10);|
+s|@define-color sidebar_border_color rgba(0, 0, 0, 0.07);|@define-color sidebar_border_color rgba(107, 43, 138, 0.20);|
+s|@define-color panel_bg_color black;|@define-color panel_bg_color #b8b8b4;|
 s|@define-color panel_fg_color white;|@define-color panel_fg_color #1a0d21;|
 "
 
