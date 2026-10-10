@@ -47,7 +47,7 @@ say "backup: $BAK_DARK"
 #    so status colors (success green / warning yellow / destructive red) and
 #    alpha-channel variants are preserved correctly) -----------------------
 
-recolor() {
+recolor_dark() {
     THEME_DIR=$1
     find "$THEME_DIR" -type f -exec sed -i -E \
       -e 's|#2B2E34|#1a0d21|gi' \
@@ -76,8 +76,30 @@ recolor() {
       {} \;
 }
 
+# Light variant uses different hex values (light blue-gray backgrounds,
+# darker reddish-purple accent). Mapped to cosmic purple *light* palette.
+recolor_light() {
+    THEME_DIR=$1
+    find "$THEME_DIR" -type f -exec sed -i -E \
+      -e 's|#CED8EA|#fbf8fc|gi' \
+      -e 's|#F0F5FF|#fdfaff|gi' \
+      -e 's|#F1F6FF|#fdfaff|gi' \
+      -e 's|#F3F7FF|#fbf8fc|gi' \
+      -e 's|#2C3444|#1a0d21|gi' \
+      -e 's|#0B1220|#1a0d21|gi' \
+      -e 's|#1F2736|#1a0d21|gi' \
+      -e 's|#68217C|#ab6fd0|gi' \
+      -e 's|#3D0C11|#cf6feb|gi' \
+      -e 's|#451D21|#ab6fd0|gi' \
+      -e 's|#7D6567|#9945b5|gi' \
+      -e 's|#9E8688|#dfb8ed|gi' \
+      -e 's|#A7B0C2|#6b2b8a|gi' \
+      -e 's|#D58CFF|#cf6feb|gi' \
+      {} \;
+}
+
 # Dark variant (always present if you're on a COSMIC session).
-recolor "$SRC_DARK"
+recolor_dark "$SRC_DARK"
 say "recolored: $SRC_DARK"
 
 # Light variant - only if already exists. Skipped silently otherwise;
@@ -86,7 +108,7 @@ if [ -d "$SRC_LIGHT" ]; then
     BAK_LIGHT=$SRC_LIGHT.bak-cosmic-purple.$TS
     cp -a "$SRC_LIGHT" "$BAK_LIGHT"
     say "backup: $BAK_LIGHT"
-    recolor "$SRC_LIGHT"
+    recolor_light "$SRC_LIGHT"
     say "recolored: $SRC_LIGHT"
 fi
 

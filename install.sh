@@ -56,6 +56,15 @@ if [ -f "$NATIVE_SH" ] && [ -d ~/.config/cosmic ]; then
     say ""
 fi
 
+# --- install Ctrl+Shift+P shortcut ------------------------------------------
+# Wires Ctrl+Shift+P to toggle between Cosmic-Purple-Dark and Cosmic-Purple.
+SHORTCUT_SH="$BUNDLE/themes/install-shortcut.sh"
+if [ -f "$SHORTCUT_SH" ] && [ -d ~/.config/cosmic ]; then
+    say "==> Wiring Ctrl+Shift+P theme-toggle shortcut ..."
+    sh "$SHORTCUT_SH" || say "  (shortcut install failed - run manually: sh $SHORTCUT_SH)"
+    say ""
+fi
+
 # --- optionally apply via gsettings ----------------------------------------
 if [ -n "$APPLY_THEME" ] && command -v gsettings >/dev/null 2>&1; then
     SCHEME=prefer-dark
