@@ -50,7 +50,7 @@ say "Backup: $BAK"
 TOGGLE_PATH="$HOME/.local/bin/cosmic-purple-toggle.sh"
 
 if grep -q "Spawn(\"$TOGGLE_PATH\")" "$SC"; then
-    say "Ctrl+Shift+P binding already present - nothing to do."
+    say "Alt+Shift+P binding already present - nothing to do."
 else
     python3 - "$SC" "$TOGGLE_PATH" <<'PYEOF'
 import sys
@@ -59,7 +59,7 @@ src = open(path).read()
 entry = (
     '    (\n'
     '        modifiers: [\n'
-    '            Ctrl,\n'
+    '            Alt,\n'
     '            Shift,\n'
     '        ],\n'
     '        key: "p",\n'
