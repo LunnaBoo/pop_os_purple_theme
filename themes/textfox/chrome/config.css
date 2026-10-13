@@ -1,0 +1,78 @@
+/* textfox user overrides (imported after defaults.css) */
+:root {
+  /* Background for the chrome: navbar, tabs, bookmarks, menus, urlbar,
+     findbar and the sidebar container. Dark + purple. */
+  --tf-bg: #2a1036;
+
+  /* Firefox's own theme accent variable (used by parts of the top chrome). */
+  --lwt-accent-color: #2a1036 !important;
+
+  /* Accent (hover highlights / borders on hover) */
+  --tf-accent: #cf6feb;
+
+  /* Borders when NOT hovered. Default was a gray (--panel-border-color),
+     which is why the "inactive" borders looked gray. */
+  --tf-border: #6b2b8a;
+
+  /* Optional tweaks */
+  --tf-rounding: 0px;
+}
+
+/* The vertical sidebar. textfox only styles #sidebar-main under
+   :root[lwtheme], which isn't set here, so it kept its own gray.
+   Give it a subtle dark purple. */
+#sidebar-main,
+#sidebar-box,
+box#vertical-tabs,
+#tabbrowser-tabs[orient="vertical"] {
+  background-color: #3c2147 !important;
+}
+
+/* New Tab / Home background */
+@-moz-document url("about:newtab"), url("about:home") {
+  :root,
+  body {
+    --newtab-background-color: #2a1036 !important;
+  }
+}
+
+/* Firefox in-content pages (about:preferences, about:addons, etc.) */
+@-moz-document url-prefix("about:"),
+               url-prefix("chrome://browser/content/") {
+  :root {
+    --in-content-page-background: #2a1036 !important;
+  }
+}
+
+/* Paint the native sidebar header purple so it matches Sidebery.
+   LibreWolf strips `extensions.activeThemeID` from user.js, so the
+   Cosmic Purple .xpi is registered but never made active.
+
+   Current Firefox (~132+) replaced the legacy `#sidebar-header` XUL
+   element with a LitElement custom element registered as
+   <sidebar-panel-header>. The h4 title and the close button sit inside
+   its shadow DOM and rely on `currentColor` inheritance, so styling the
+   host element's color and background is enough to recolor both. */
+sidebar-panel-header,
+#sidebar-panel-header,
+#sidebar-box sidebar-panel-header,
+#sidebar-main sidebar-panel-header {
+  background-color: #2a1036 !important;
+  color: #d9c7ec !important;
+  fill: #d9c7ec !important;
+  border: 0 !important;
+}
+
+/* Defensive backup: pierce ShadowRoot by inheritance. The shadow tree
+   uses `fill: currentColor` on .sidebar-panel-heading, so the host's
+   color above already tints the close-X svg. */
+::part(sidebar-panel-heading),
+.sidebar-panel-heading,
+.sidebar-panel-title {
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+/* Optional: hide it entirely if you'd rather not see the redundant title
+   (Sidebery's own nav bar is already shown beneath it). */
+/* sidebar-panel-header, #sidebar-panel-header { display: none !important; } */

@@ -1,0 +1,46 @@
+================================================================================
+ SIDEBERY — Styles editor snippet
+================================================================================
+
+Sidebery renders in its own extension document, so this CANNOT go in
+userChrome.css. It has to be pasted into Sidebery's own Styles editor.
+
+HOW TO APPLY
+------------
+1. Open Sidebery's settings:
+     - right-click the Sidebery sidebar -> "Sidebery settings", or
+     - click the gear icon at the bottom of the Sidebery panel.
+2. Go to  Appearance  ->  "Styles editor".
+3. Paste everything between the two dashed lines below into the textarea.
+4. It applies immediately (no browser restart needed).
+
+WHY THESE NAMES
+---------------
+Sidebery defines its own CSS variables and maps them like this:
+    --frame-bg:   var(--s-frame-bg,   #282828);   /* sidebar body   */
+    --toolbar-bg: var(--s-toolbar-bg, #323232);   /* Sidebery header*/
+    #root { background-color: var(--frame-bg); }
+So overriding the --s-* variables below is what actually recolors it.
+Other knobs it accepts: --s-act-el-bg (selected tab), --s-act-el-border,
+--s-popup-bg / --s-popup-fg (menus), --s-frame-fg / --s-toolbar-fg (text).
+
+--------------------------------------------------------------------------------
+#root {
+  --s-frame-bg:   #2a1036;   /* sidebar body background      (default #282828) */
+  --s-toolbar-bg: #2a1036;   /* Sidebery header / toolbar    (default #323232) */
+  --s-frame-fg:   #d9c7ec;   /* body text */
+  --s-toolbar-fg: #d9c7ec;   /* header text */
+  --s-accent:     #cf6feb;   /* selected-tab / focus accent */
+}
+--------------------------------------------------------------------------------
+
+PALETTE REFERENCE (from the kitty "purple" theme)
+-------------------------------------------------
+  #14081a  darkest background
+  #1a0d21  secondary dark
+  #2a1036  sidebar / content background (used here)
+  #3c2147  slightly lighter purple (good for the header instead of #2a1036)
+  #6b2b8a  dim purple (borders)
+  #ab6fd0  accent purple
+  #cf6feb  bright accent
+  #d9c7ec  foreground / text

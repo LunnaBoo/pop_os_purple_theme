@@ -28,12 +28,13 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 
 | Script | Flag | What it does |
 |---|---|---|
-| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Ask to install the kitty auto dark/light theme files (when a kitty config dir exists and stdin is a TTY). Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
+| `install.sh` | _(none)_ | Build both variants. Recolor COSMIC native theme. Wire Alt+Shift+P. Ask to install the kitty auto dark/light theme files (when a kitty config dir exists and stdin is a TTY). Ask to install the textfox browser chrome rice (when LibreWolf/Firefox profiles exist and stdin is a TTY). Optionally ask for per-theme wallpapers. Optionally ask about the LibreWolf color-scheme fix. Print manual apply command. |
 | `install.sh` | `--apply-dark` | Same as above, **plus** set `gtk-theme=Cosmic-Purple-Dark` and `color-scheme=prefer-dark` via gsettings |
 | `install.sh` | `--apply-light` | Same as above, **plus** set `gtk-theme=Cosmic-Purple` and `color-scheme=prefer-light` via gsettings |
-| `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme, kitty theme) for scripted installs / CI |
+| `install.sh` | `--no-prompt` | Skip the interactive prompts (per-theme wallpapers, LibreWolf color-scheme, kitty theme, textfox rice) for scripted installs / CI |
 | `install.sh` | `--librewolf` | Apply the LibreWolf color-scheme fix (below) without asking |
 | `install.sh` | `--kitty` | Install the kitty auto dark/light theme files (below) without asking |
+| `install.sh` | `--textfox` | Install the textfox browser chrome rice (below) without asking |
 | `themes/gtk-cosmic-theme.sh` | _(none)_ | Build both `~/.local/share/themes/Cosmic-Purple` and `-Dark` |
 | `themes/gtk-cosmic-theme.sh` | `--dark-only` | Only rebuild the dark variant |
 | `themes/gtk-cosmic-theme.sh` | `--light-only` | Only rebuild the light variant |
@@ -48,6 +49,10 @@ sh install.sh --apply-light   # also activate Cosmic-Purple
 | `themes/cosmic-purple-toggle.sh` | _(none)_ | Flips `gtk-theme` + `color-scheme` + `is_dark` **and** swaps the wallpaper light↔dark. Bound to Alt+Shift+P by default. |
 | `themes/librewolf-color-scheme.sh` | _(none)_ | Write the three color-scheme prefs into every LibreWolf profile's `user.js` (backup first). Idempotent. |
 | `themes/librewolf-color-scheme.sh` | `--help` (`-h`) | Print usage |
+| `themes/textfox.sh` | _(none)_ | Install the textfox browser chrome rice into every detected LibreWolf and Firefox profile: purple `userChrome`/`userContent` CSS, the Cosmic Purple theme XPI (sideloaded into `extensions/`), and the 5 matching prefs merged into `user.js` (backup first). Idempotent; preserves every other pref (e.g. the three written by `librewolf-color-scheme.sh`). |
+| `themes/textfox.sh` | `--profile DIR` | Only touch the given profile directory (must look like a profile) |
+| `themes/textfox.sh` | `--check` | Exit 0 if at least one profile exists, else 1 (no output) |
+| `themes/textfox.sh` | `--help` (`-h`) | Print usage |
 | `themes/install-kitty-theme.sh` | _(none)_ | Ask for confirmation (when run from a terminal), then install the three kitty auto-theme files (`themes/kitty/*.auto.conf`) into `~/.config/kitty` so kitty follows the system dark/light theme (kitty >= 0.38). Idempotent; prints a message and exits 0 if the kitty config dir is missing. Non-TTY (scripted) runs skip the prompt. |
 | `themes/install-kitty-theme.sh` | `--yes` (`-y`) | Install the three kitty auto-theme files without asking |
 | `themes/install-kitty-theme.sh` | `--help` (`-h`) | Print usage |
@@ -128,6 +133,44 @@ three prefs are rewritten, nothing is duplicated.
 This only affects how *websites* pick light/dark. The LibreWolf UI theme
 itself is a GTK app, themed separately by the GTK themes above — running
 this script doesn't change LibreWolf's appearance.
+
+## textfox browser chrome
+
+The repo vendors the **textfox** purple browser chrome rice in
+`themes/textfox/` (copied from the textfox_rice project) and installs it
+into every detected **LibreWolf and Firefox** profile via
+`themes/textfox.sh`:
+
+- `chrome/` — purple `userChrome.css` / `userContent.css` theme (backed up
+  to `chrome.bak.<ts>` first)
+- `cosmic-purple@lainos.local.xpi` — the Cosmic Purple theme, sideloaded
+  into each profile's `extensions/`
+- `user.js` — the 5 matching prefs (`toolkit.legacyUserProfileCustomizations.stylesheets`,
+  `svg.context-properties.content.enabled`, `layout.css.has-selector.enabled`,
+  `xpinstall.signatures.required`, `extensions.activeThemeID`) merged into
+  every profile's `user.js` (timestamped `.bak.<ts>` backup first)
+
+The prefs merge never clobbers anything else in `user.js`: it strips only
+its own marker line and prior copies of its 5 pref names, then appends
+them. Re-running is idempotent (nothing is duplicated), and it coexists
+with `librewolf-color-scheme.sh` — running the two scripts in either order
+leaves all 8 prefs present exactly once.
+
+Two things stay manual:
+
+1. **Restart the browser** — chrome and prefs load at startup.
+2. **Sidebery styles** — Sidebery can't be scripted, so paste
+   `themes/textfox/sidebery/styles-editor.txt` into Sidebery →
+   Appearance → Styles editor to get the matching tab styling.
+
+`install.sh` offers this after building — it only asks when at least one
+profile is found and stdin is a TTY. Pass `--textfox` to install it
+without asking, or `--no-prompt` to skip the question entirely.
+
+Detection is **entirely local**: the script only checks for the browser
+binaries/config dirs and real profile dirs (`*.default*` or containing
+`prefs.js`/`times.json`) on disk. No network access, and no browsing
+databases are read.
 
 ## kitty
 
@@ -246,13 +289,15 @@ See [`palette.md`](palette.md) for the full hex → role mapping.
 | Path | Purpose |
 |---|---|
 | `README.md`                       | this file |
-| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply + interactive prompts for per-theme wallpapers, the LibreWolf color-scheme fix and the kitty auto-theme install) |
+| `install.sh`                      | one-shot installer (builds both layers + optional gsettings apply + interactive prompts for per-theme wallpapers, the LibreWolf color-scheme fix, the textfox chrome rice and the kitty auto-theme install) |
 | `themes/gtk-cosmic-theme.sh`      | builds GTK themes (`Cosmic-Purple` / `Cosmic-Purple-Dark`) for LibreWolf etc. |
 | `themes/cosmic-native-recolor.sh` | recolors the user's libcosmic theme in place for cosmic-edit / top bar / etc. |
 | `themes/install-shortcut.sh`      | installs the toggle + wallpaper scripts to `~/.local/bin`, binds Alt+Shift+P. Portable across users. |
 | `themes/set-wallpaper.sh`         | change the light/dark wallpapers Alt+Shift+P swaps (`--light`/`--dark`/`--both` or interactive menu) |
 | `themes/librewolf-color-scheme.sh` | makes LibreWolf websites follow the system dark/light theme (disables RFP, enables FPP with a `CSSPrefersColorScheme` exemption). Idempotent `user.js` writer, backups first. |
 | `themes/install-kitty-theme.sh` | installs the kitty auto dark/light theme files (`themes/kitty/`) into `~/.config/kitty` so kitty follows the system dark/light theme natively (kitty >= 0.38). Asks for confirmation when run from a terminal (`--yes`/`-y` skips; non-TTY runs install directly). Idempotent; skips with exit 0 if no kitty config dir. |
+| `themes/textfox.sh`              | installs the vendored textfox chrome rice (`themes/textfox/`: `chrome/`, the Cosmic Purple XPI, `user.js` prefs) into every detected LibreWolf and Firefox profile. Backups first, idempotent, preserves unrelated prefs. `--check` / `--profile DIR` / `--help` supported. |
+| `themes/textfox/`                | vendored textfox rice: `chrome/` (purple userChrome/userContent CSS), `cosmic-purple@lainos.local.xpi`, `user.js` (single source of truth for the 5 prefs), `sidebery/styles-editor.txt` (manual paste) |
 | `themes/cosmic-purple-toggle.sh`  | the actual flipper — swaps theme + wallpaper, bound to Alt+Shift+P |
 | `palette.md`                      | color reference |
 

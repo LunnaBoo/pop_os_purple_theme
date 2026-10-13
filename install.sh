@@ -10,9 +10,10 @@
 #     sh install.sh --apply-light    # build both, apply Cosmic-Purple
 #     sh install.sh --dark-only      # build only Cosmic-Purple-Dark
 #     sh install.sh --light-only     # build only Cosmic-Purple
-#     sh install.sh --no-prompt      # skip the interactive prompts (wallpapers, LibreWolf, kitty)
+#     sh install.sh --no-prompt      # skip the interactive prompts (wallpapers, LibreWolf, kitty, textfox)
 #     sh install.sh --librewolf      # apply the LibreWolf color-scheme fix without asking
 #     sh install.sh --kitty          # install the kitty auto dark/light theme without asking
+#     sh install.sh --textfox        # install the textfox browser chrome rice without asking
 #
 # Alt+Shift+P is wired to toggle the theme (and the wallpaper, if you opt
 # in). After building you're optionally asked whether to set per-theme
@@ -29,6 +30,12 @@
 # follows the system dark/light mode natively (kitty >= 0.38). Pass
 # --kitty to install them without asking; --no-prompt skips the question.
 # Never fatal.
+#
+# If LibreWolf or Firefox profiles are found you're also asked whether to
+# install the "textfox" browser chrome rice - purple userChrome/userContent
+# themes, the Cosmic Purple theme (sideloaded), plus the matching prefs
+# merged into user.js (themes/textfox.sh). Pass --textfox to install it
+# without asking; --no-prompt skips the question entirely. Never fatal.
 #
 # No sudo needed. Run from anywhere.
 
@@ -47,6 +54,7 @@ APPLY_THEME=
 NO_PROMPT=
 LIBREWOLF=
 KITTY=
+TEXTFOX=
 for a in "$@"; do
     case "$a" in
         --dark-only)   BUILD_ARGS="--dark-only"  ;;
@@ -56,8 +64,9 @@ for a in "$@"; do
         --no-prompt)   NO_PROMPT=1 ;;
         --librewolf)   LIBREWOLF=1 ;;
         --kitty)       KITTY=1 ;;
+        --textfox)     TEXTFOX=1 ;;
         --help|-h)
-            sed -n '2,32p' "$0"
+            sed -n '2,39p' "$0"
             exit 0 ;;
         *) die "unknown arg: $a" ;;
     esac
@@ -104,6 +113,33 @@ if [ -f "$LW_SH" ]; then
     if [ -n "$LW_WANT" ]; then
         say "==> Making LibreWolf websites follow the system dark/light theme ..."
         sh "$LW_SH" || say "  (LibreWolf fix failed - continuing anyway)"
+        say ""
+    fi
+fi
+
+# --- optional textfox browser chrome rice (interactive) ----------------------
+# Vendors the purple userChrome/userContent theme, sideloads the Cosmic
+# Purple theme XPI into each profile's extensions/, and merges the matching
+# prefs into user.js for every detected LibreWolf AND Firefox profile
+# (themes/textfox.sh). Asked only when at least one profile exists;
+# --textfox forces it, and --no-prompt (or a non-TTY stdin) skips the
+# question entirely. Never fatal.
+TF_SH="$BUNDLE/themes/textfox.sh"
+TF_WANT=
+if [ -f "$TF_SH" ]; then
+    if [ -n "$TEXTFOX" ]; then
+        TF_WANT=1
+    elif [ -z "$NO_PROMPT" ] && [ -t 0 ] && sh "$TF_SH" --check >/dev/null 2>&1; then
+        printf 'Install the textfox browser chrome rice (LibreWolf/Firefox)? [y/N] '
+        _ans=
+        read -r _ans || true
+        case "$_ans" in
+            y|Y|yes|YES|Yes) TF_WANT=1 ;;
+        esac
+    fi
+    if [ -n "$TF_WANT" ]; then
+        say "==> Installing the textfox browser chrome rice ..."
+        sh "$TF_SH" || say "  (textfox install failed - continuing anyway)"
         say ""
     fi
 fi
