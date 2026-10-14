@@ -175,40 +175,39 @@ recolor_light() {
       {} \;
 }
 
-# Toggle / icon-button knob visibility.
-# libcosmic's toggle widget pulls its knob color from
-# `cosmic.ron`'s icon_button.on (and button.border for the outline).
-# Stock has them at #161616FF (near-black) which is invisible against
-# the dark-purple accent track. Override to the paper / Dusk text so
-# the knob contrasts against the track.
-fix_toggle_knob_light() {
-    find "$1" -type f -exec sed -i -E \
-      -e 's|^[[:space:]]+on: "#161616FF"|on: "#faf4edFF"|' \
-      -e 's|^[[:space:]]+on: "#272727FF"|on: "#faf4edFF"|' \
-      -e 's|^[[:space:]]+on: "#383447FF"|on: "#faf4edFF"|' \
-      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#faf4edA6"|' \
-      -e 's|^[[:space:]]+on_disabled: "#383447A6"|on_disabled: "#faf4edA6"|' \
-      -e 's|^[[:space:]]+border: "#161616FF"|border: "#ded5cbFF"|' \
-      -e 's|^[[:space:]]+border: "#383447FF"|border: "#ded5cbFF"|' \
-      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#faf4ed80"|' \
-      -e 's|^[[:space:]]+disabled_border: "#38344780"|disabled_border: "#faf4ed80"|' \
-      {} \;
-}
-fix_toggle_knob_dark() {
-    find "$1" -type f -exec sed -i -E \
-      -e 's|^[[:space:]]+on: "#161616FF"|on: "#e0def4FF"|' \
-      -e 's|^[[:space:]]+on: "#383447FF"|on: "#e0def4FF"|' \
-      -e 's|^[[:space:]]+on_disabled: "#161616A6"|on_disabled: "#e0def4A6"|' \
-      -e 's|^[[:space:]]+on_disabled: "#383447A6"|on_disabled: "#e0def4A6"|' \
-      -e 's|^[[:space:]]+border: "#161616FF"|border: "#e0def480"|' \
-      -e 's|^[[:space:]]+disabled_border: "#16161680"|disabled_border: "#e0def480"|' \
-      {} \;
+# Icon-button foreground repair (DARK only).
+#
+# NOT about the toggle knob: libcosmic derives the toggler knob colour from
+# the palette step `neutral_2` (light #BEBEBE / dark #303030) - there is no
+# per-widget knob key. This pass only fixes the icon GLYPH colour.
+#
+# The dark recolour above maps stock #BEBEBE -> #383447, but #BEBEBE is
+# exactly `icon_button.on` (the icon glyph colour). Left alone, dark-mode
+# icon glyphs would be near-black on a dark surface. Restore them to the
+# Dusk text colour.
+#
+# The LIGHT variant deliberately gets NO such pass: stock light
+# icon_button.on is #161616 (dark glyphs on cream - already correct). An
+# earlier version also rewrote #272727/#161616 here repo-wide, which hit
+# background.on / secondary.on / button.on / transparent_*.on - the
+# general body TEXT colour in the light variant - and turned it cream
+# (#faf4ed), i.e. invisible text until an Appearance change rebuilt the
+# theme. This pass must never target anything but `icon_button`.
+restore_icon_button_fg_dark() {
+    _f=$1/icon_button
+    [ -f "$_f" ] || return 0
+    sed -i -E \
+      -e 's|^([[:space:]]+on: )"#161616FF"|\1"#e0def4FF"|' \
+      -e 's|^([[:space:]]+on: )"#383447FF"|\1"#e0def4FF"|' \
+      -e 's|^([[:space:]]+on_disabled: )"#161616A6"|\1"#e0def4A6"|' \
+      -e 's|^([[:space:]]+on_disabled: )"#383447A6"|\1"#e0def4A6"|' \
+      "$_f"
 }
 
 # -- Dark variant (always present) -------------------------------------------
 recolor_dark "$SRC_DARK"
-fix_toggle_knob_dark "$SRC_DARK"
-say "recolored: $SRC_DARK  (toggle-knob fix applied)"
+restore_icon_button_fg_dark "$SRC_DARK"
+say "recolored: $SRC_DARK  (icon-button foreground repaired)"
 
 # -- Light variant - only if it already exists ------------------------------
 if [ -d "$SRC_LIGHT" ]; then
@@ -216,8 +215,29 @@ if [ -d "$SRC_LIGHT" ]; then
     cp -a "$SRC_LIGHT" "$BAK_LIGHT"
     say "backup: $BAK_LIGHT"
     recolor_light "$SRC_LIGHT"
-    fix_toggle_knob_light "$SRC_LIGHT"
-    say "recolored: $SRC_LIGHT  (toggle-knob fix applied)"
+    say "recolored: $SRC_LIGHT"
+fi
+
+# -- Seed the Light *Builder* so Appearance rebuilds stay Cosmic Purple -------
+# cosmic-settings rebuilds the active theme from the Builder config on any
+# Appearance/Style change. A ThemeBuilder whose `palette` is missing falls
+# back to the built-in DARK palette (libcosmic ThemeBuilder::default), which
+# rebuilds a "Light" theme with dark surfaces and white `on`/text colours -
+# i.e. the same "white text until you flip a Style option" symptom. The Dark
+# Builder always ships a palette, but a stock profile's Light Builder has
+# only the style files, so a light rebuild had nothing light to build from.
+# Seed any missing Light Builder file from the system copy, then recolour the
+# seeded palette with the light mappings (accents are applied just below).
+STOCK_BLD_LIGHT=/usr/share/cosmic/com.system76.CosmicTheme.Light.Builder/v2
+if [ -d "$BLD_LIGHT" ] && [ -d "$STOCK_BLD_LIGHT" ]; then
+    for _f in "$STOCK_BLD_LIGHT"/*; do
+        _b=${_f##*/}
+        [ -e "$BLD_LIGHT/$_b" ] || cp -a "$_f" "$BLD_LIGHT/$_b"
+    done
+    if [ -f "$BLD_LIGHT/palette" ]; then
+        recolor_light "$BLD_LIGHT/palette"
+        say "seeded Light Builder palette: $BLD_LIGHT/palette"
+    fi
 fi
 
 # -- pin GTK theme so cosmic-settings-daemon doesn't fight us ----------------
@@ -265,8 +285,12 @@ say "  accent pass complete"
 #                                (stock None is why users couldn't tell which
 #                                window was focused).
 # Bright saturated purple (#cf6feb) so it stands out on both cream and dusk.
-for V in "$SRC_DARK" "$SRC_LIGHT"; do
-    [ -f "$V/active_hint" ] || continue
+# Write into both the derived theme AND the Builder (so a rebuild keeps the
+# hint). Created if absent - previously the `[ -f ] || continue` guard meant
+# the light variant, whose derived dir ships no active_hint/window_hint, got
+# neither file and thus no focus border at all.
+for V in "$SRC_DARK" "$SRC_LIGHT" "$BLD_DARK" "$BLD_LIGHT"; do
+    [ -d "$V" ] || continue
     printf '3\n' > "$V/active_hint"
     printf 'Some("#cf6febFF")\n' > "$V/window_hint"
 done
