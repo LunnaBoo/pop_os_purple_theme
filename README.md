@@ -244,6 +244,12 @@ native UI is purple. The install script runs both.
 - Text tints `#C2CFE2`, `#B5C1D4`, `#CEDBEF` → cosmic foreground `#d9c7ec`
 - Accent purple `#E79CFE` family → cosmic bright `#cf6feb`
 - Accent pressed/hover variants → cosmic primary/secondary
+- ThemeBuilder-derived container surfaces (`background`, `primary`, `secondary`
+  and their `transparent_*` variants) → Dusk purples; this is what makes the
+  notification cards (drawn from `background.component.hover` / `.pressed`)
+  match the theme
+- ThemeBuilder inputs (`bg_color`, `neutral_tint`, `text_tint`) pinned to the
+  Dusk purples so Appearance rebuilds stay purple instead of reverting to grey
 - Status colors preserved: warning (yellow), success (green),
   destructive (red), error (red-orange)
 

@@ -78,6 +78,12 @@ recolor_dark() {
     #   muted text       : #908caa   overlay
     # Stock Dark uses a different gray ramp than stock Light; this
     # mapping handles the actual COSMIC Dark stock hex values.
+    #
+    # Generated ThemeBuilder surface ramp -> Cosmic Purple. cosmic-settings
+    # derived these grey-blues from the Builder's bg_color (#2B2E34) and
+    # neutral_tint (#777777); the stock mappings above never matched them, so
+    # dark surfaces (and cosmic-notifications' background.component.hover
+    # cards) stayed grey. Map them to the same Rose Pine Dusk targets.
     find "$THEME_DIR" -type f -exec sed -i -E \
       -e 's|#1B1B1B|#0d0a1f|gi' \
       -e 's|#262626|#100c20|gi' \
@@ -115,6 +121,33 @@ recolor_dark() {
       -e 's|#48B9C7|#cf6feb|gi' \
       -e 's|#92CF9C|#9893a5|gi' \
       -e 's|#F7E062|#ea9d34|gi' \
+      -e 's|#2B2E34|#0d0a1f|gi' \
+      -e 's|#40434A|#1f1b2e|gi' \
+      -e 's|#53565C|#1f1b2e|gi' \
+      -e 's|#66696E|#26233a|gi' \
+      -e 's|#55585D|#383447|gi' \
+      -e 's|#484B4F|#1f1b2e|gi' \
+      -e 's|#56585B|#26233a|gi' \
+      -e 's|#4A4C4F|#383447|gi' \
+      -e 's|#383B42|#0d0a1f|gi' \
+      -e 's|#484C52|#1f1b2e|gi' \
+      -e 's|#5B5D63|#1f1b2e|gi' \
+      -e 's|#6D6F75|#26233a|gi' \
+      -e 's|#606368|#383447|gi' \
+      -e 's|#5B5D61|#383447|gi' \
+      -e 's|#46494F|#1a1530|gi' \
+      -e 's|#4E5158|#1f1b2e|gi' \
+      -e 's|#5F6268|#1f1b2e|gi' \
+      -e 's|#5F6267|#1f1b2e|gi' \
+      -e 's|#717479|#26233a|gi' \
+      -e 's|#707278|#26233a|gi' \
+      -e 's|#6B6D72|#383447|gi' \
+      -e 's|#696C71|#383447|gi' \
+      -e 's|#494949|#1f1b2e|gi' \
+      -e 's|#565656|#383447|gi' \
+      -e 's|#777777|#908caa|gi' \
+      -e 's|#C2CFE2|#d9c7ec|gi' \
+      -e 's|#CEDBEF|#d9c7ec|gi' \
       {} \;
 }
 
@@ -204,10 +237,30 @@ restore_icon_button_fg_dark() {
       "$_f"
 }
 
+# Container text retint (DARK only).
+#
+# The ThemeBuilder-derived containers ship `on`/`on_disabled` as pure white
+# (#FFFFFFFF / #FFFFFFA6). Retint only the six container files to the Dusk
+# foreground so body text on notification cards and panels matches the theme.
+# Scoped to these files on purpose: a repo-wide #FFFFFF rewrite would clobber
+# palette.neutral_10 (#FFFFFFFF).
+fix_dark_container_text() {
+    for _f in background primary secondary \
+              transparent_background transparent_primary transparent_secondary; do
+        _p=$1/$_f
+        [ -f "$_p" ] || continue
+        sed -i -E \
+          -e 's|^([[:space:]]+on: )"#FFFFFFFF"|\1"#e0def4FF"|' \
+          -e 's|^([[:space:]]+on_disabled: )"#FFFFFFA6"|\1"#e0def4A6"|' \
+          "$_p"
+    done
+}
+
 # -- Dark variant (always present) -------------------------------------------
 recolor_dark "$SRC_DARK"
 restore_icon_button_fg_dark "$SRC_DARK"
-say "recolored: $SRC_DARK  (icon-button foreground repaired)"
+fix_dark_container_text "$SRC_DARK"
+say "recolored: $SRC_DARK  (icon-button foreground + container text repaired)"
 
 # -- Light variant - only if it already exists ------------------------------
 if [ -d "$SRC_LIGHT" ]; then
@@ -276,6 +329,20 @@ say "  accent palette overrides applied"
 # (Intentionally NOT re-running the recolor here - it would undo palette
 # overrides like accent_blue since the recolor mapping covers #00525A.)
 say "  accent pass complete"
+
+# -- Pin ThemeBuilder surface inputs (DARK) ---------------------------------
+# cosmic-settings derives the active theme from these on any Appearance/Style
+# change, and round-trips them back from the derived theme
+# (bg_color = background.base, neutral_tint = palette.neutral_5,
+# text_tint = background.on). Writing the Cosmic Purple values here means a
+# rebuild reproduces purple surfaces instead of the generated grey-blue, so
+# the notification cards stay purple.
+if [ -d "$BLD_DARK" ]; then
+    printf 'Some("#0d0a1fFF")\n' > "$BLD_DARK/bg_color"
+    printf 'Some("#908caaFF")\n' > "$BLD_DARK/neutral_tint"
+    printf 'Some("#d9c7ecFF")\n' > "$BLD_DARK/text_tint"
+    say "  builder inputs pinned: bg_color #0d0a1f, neutral_tint #908caa, text_tint #d9c7ec"
+fi
 
 # -- Active window hint (focus border) -------------------------------------
 # The two window-hint theme keys have different types:
