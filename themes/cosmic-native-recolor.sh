@@ -344,6 +344,38 @@ if [ -d "$BLD_DARK" ]; then
     say "  builder inputs pinned: bg_color #0d0a1f, neutral_tint #908caa, text_tint #d9c7ec"
 fi
 
+# -- Frosted glass: dark on, light off --------------------------------------
+# Cosmic Purple keeps glass on the dark theme and none on the light one.
+# cosmic-settings' Frosted Glass drawer cannot express this: its
+# set_frosted / set_glass / set_frosted_* helpers drive BOTH themes together,
+# so any GUI change there writes the same value to dark and light - and would
+# wipe this split. Set the per-surface booleans directly in the derived theme
+# and in the Builder (so an Appearance rebuild keeps them).
+#
+# cosmic-comp / libcosmic only blur - and only make a surface translucent -
+# when the matching boolean is true:
+#   frosted_windows          -> app windows (Core::frosted, cosmic-comp)
+#   frosted_system_interface -> desktop chrome
+#   frosted_applets          -> applet popups / notification-style surfaces
+# The `frosted` blur *strength* is deliberately left untouched: it is inert
+# while the booleans are false, so the GUI can still move it without
+# re-enabling glass on the light theme.
+set_frosted_surfaces() {
+    _d=$1
+    [ -d "$_d" ] || return 0
+    printf '%s\n' "$2" > "$_d/frosted_windows"
+    printf '%s\n' "$3" > "$_d/frosted_panel"
+    printf '%s\n' "$4" > "$_d/frosted_applets"
+    printf '%s\n' "$5" > "$_d/frosted_system_interface"
+}
+# dark: windows + applet popups frosted; panel / system interface not
+set_frosted_surfaces "$SRC_DARK"  true  false true  false
+set_frosted_surfaces "$BLD_DARK"  true  false true  false
+# light: no frosted glass anywhere
+set_frosted_surfaces "$SRC_LIGHT" false false false false
+set_frosted_surfaces "$BLD_LIGHT" false false false false
+say "  frosted glass: dark on (windows+applets), light off"
+
 # -- Active window hint (focus border) -------------------------------------
 # The two window-hint theme keys have different types:
 #   active_hint : u32          - outline WIDTH in pixels (stock = 3)

@@ -250,6 +250,8 @@ native UI is purple. The install script runs both.
   match the theme
 - ThemeBuilder inputs (`bg_color`, `neutral_tint`, `text_tint`) pinned to the
   Dusk purples so Appearance rebuilds stay purple instead of reverting to grey
+- Frosted glass: dark keeps it (windows + applet popups), light gets none —
+  see [Frosted glass](#frosted-glass)
 - Status colors preserved: warning (yellow), success (green),
   destructive (red), error (red-orange)
 
@@ -266,6 +268,35 @@ What **doesn't** get recolored:
 If `/usr/share/themes/adw-gtk3` isn't installed (Pop!_OS 22.04 / 22.10 era),
 the script falls back to `/usr/share/themes/CoplandOS-GTK` (dark) and
 Adwaita (light).
+
+## Frosted glass
+
+`cosmic-native-recolor.sh` writes the frost settings **per theme** so the
+dark theme has glass and the light theme has none:
+
+| Key | Dark | Light |
+|---|---|---|
+| `frosted_windows` | `true` | `false` |
+| `frosted_applets` | `true` | `false` |
+| `frosted_panel` | `false` | `false` |
+| `frosted_system_interface` | `false` | `false` |
+
+These booleans are the on/off switch: cosmic-comp and libcosmic only blur —
+and only make a surface translucent — when the matching key is `true`
+(`frosted_windows` → app windows, `frosted_system_interface` → desktop
+chrome, `frosted_applets` → applet popups / notification-style surfaces).
+The `frosted` blur *strength* is left untouched, since it is inert while the
+booleans are `false`.
+
+Both the derived theme (`com.system76.CosmicTheme.{Dark,Light}/v2`) and the
+Builder (`…Builder/v2`) are written, so an Appearance rebuild keeps the split.
+
+**The COSMIC Settings GUI cannot express this.** Its Appearance → Frosted
+Glass controls (`set_frosted`, `set_glass`, `set_frosted_*`) always apply the
+same value to *both* themes, so touching any of them writes the same setting
+to dark and light and erases the split. Re-run
+`sh themes/cosmic-native-recolor.sh` (or `install.sh`) to restore it — it is
+idempotent.
 
 ## Revert
 
